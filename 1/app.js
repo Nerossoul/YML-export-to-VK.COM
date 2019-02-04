@@ -3,7 +3,14 @@ var clock = new Vue({
     data: {
       main: "new"
     },
+    computed: {
+      logined() {
+        return true;
+      }
+    },
     components: {
+      'site-login': siteLogin,
       'dash-board' : dashBoard
+
     }
 });
