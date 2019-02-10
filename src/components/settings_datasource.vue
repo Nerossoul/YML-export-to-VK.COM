@@ -25,7 +25,6 @@
 </template>
 
 <script>
-/* eslint-disable */
 
 export default {
   name: 'settings_datasource',
@@ -33,12 +32,12 @@ export default {
     return {
       // TODO: ymlSourceLink must be user setable and saved to localstorege
       ymlSourceLink: 'https://playavto.ru/export/yandex_yml.xml',
-      xmlObj: {NoData:true},
+      xmlObj: { NoData: true },
       categories: [],
       products: [],
       isGettingDataNow: false,
       gettingDataText: 'Получаем данные...',
-      x2js: {}
+      x2js: ' '
     }
   },
   watch: {
@@ -56,18 +55,20 @@ export default {
     file_get_contents () {
       var context = this
       fetch(this.ymlSourceLink)
-      .then((resp) => {
+        .then((resp) => {
           return resp.text()
         })
-      .then(function (data) {
-        context.xmlObj = context.x2js.xml_str2json(data)
-      }).then(function () {
-        context.isGettingDataNow = false
-      })
-      }
+        .then(function (data) {
+          context.xmlObj = context.x2js.xml_str2json(data)
+        })
+        .then(function () {
+          context.isGettingDataNow = false
+        })
+    }
   },
   mounted: function () {
-    this.x2js = new X2JS();
+/* eslint-disable */
+    this.x2js = new X2JS()
   }
 }
 </script>
