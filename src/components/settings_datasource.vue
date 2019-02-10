@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="card">
     <div class="card-body">
       <h5 class="card-title">Текущий источник данных</h5>
@@ -9,17 +10,22 @@
         </div>
       </div>
       <div v-else >
-        <button type="button" name="button" class="btn btn-dark" @click="getData">Получить данные</button>
-        <button type="button" name="button" class="btn btn-dark" @click="xmlToJson2">РАЗОБРАТЬ ПОЛУЧЕНЫЙ ДОКУМЕНТ</button>
+        <div v-if="xmlObj.NoData"><button type="button" name="button" class="btn btn-dark" @click="getData">Получить данные</button></div>
       </div>
     </div>
   </div>
+  <div v-if="!xmlObj.NoData" class="card">
+    <div class="card-body">
+      <h5 class="card-title">Текущие данные:</h5>
+      <p class="card-text">Категории: {{ categories.length }}</p>
+      <p class="card-text">Товары: {{ products.length }}</p>
+    </div>
+  </div>
+</div>
 </template>
 
 <script>
 /* eslint-disable */
-import xml2json from '@/assets/xml2json'
-
 
 export default {
   name: 'settings_datasource',
@@ -27,17 +33,18 @@ export default {
     return {
       // TODO: ymlSourceLink must be user setable and saved to localstorege
       ymlSourceLink: 'https://playavto.ru/export/yandex_yml.xml',
-      xmlText: '!!! ',
-      xmlDocument: {},
-      xmlObj: {},
+      xmlObj: {NoData:true},
+      categories: [],
+      products: [],
       isGettingDataNow: false,
-      gettingDataText: 'Получаем данные...'
-      xml2json: xml2json
+      gettingDataText: 'Получаем данные...',
+      x2js: {}
     }
   },
   watch: {
-    xmlText()  {
-      this.xmlDocument = this.StringToXML()
+    xmlObj () {
+      this.categories = this.xmlObj.yml_catalog.shop.categories.category
+      this.products = this.xmlObj.yml_catalog.shop.offers.offer
     }
   },
   methods: {
@@ -53,67 +60,14 @@ export default {
           return resp.text()
         })
       .then(function (data) {
-        context.xmlText = data
+        context.xmlObj = context.x2js.xml_str2json(data)
+      }).then(function () {
         context.isGettingDataNow = false
-      });
-      },
-      xmlToJson2 (i) {
-        i++;
-        console.log(i + 'lunched')
-        setTimeout(()=>{
-          this.xmlToJson2(i);
-        }, 2000)
-        console.log(i +'fineshed')
-        //http://jsfiddle.net/abdmob/gkxucxrj/1/
-      },
-     xmlToJson () {
-        console.log('Запустили парсинг')
-        var obj = {};
-        var xml = this.xmlDocument;
-        if (xml.nodeType == 1) { // element
-          // do attributes
-          if (xml.attributes.length > 0) {
-          obj["@attributes"] = {};
-            for (var j = 0; j < xml.attributes.length; j++) {
-              var attribute = xml.attributes.item(j);
-              obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
-            }
-          }
-        } else if (xml.nodeType == 3) { // text
-          obj = xml.nodeValue;
-        }
-        // do children
-        if (xml.hasChildNodes()) {
-          for(var i = 0; i < xml.childNodes.length; i++) {
-            var item = xml.childNodes.item(i);
-            var nodeName = item.nodeName;
-            if (typeof(obj[nodeName]) == "undefined") {
-              console.log('first if')
-              obj[nodeName] = this.xmlToJson(item);
-            } else {
-              if (typeof(obj[nodeName].push) == "undefined") {
-                var old = obj[nodeName];
-                obj[nodeName] = [];
-                obj[nodeName].push(old);
-              }
-              console.log('seconf if')
-              obj[nodeName].push(this.xmlToJson(item));
-            }
-          }
-        }
-        this.xmlObj = obj;
-      },
-      StringToXML() {
-         let oString = this.xmlText;
-         if (window.ActiveXObject) {
-         var oXML = new ActiveXObject("Microsoft.XMLDOM"); oXML.loadXML(oString);
-         return oXML;
-         }
-         // code for Chrome, Safari, Firefox, Opera, etc.
-         else {
-         return (new DOMParser()).parseFromString(oString, "text/xml");
-         }
-       }
+      })
+      }
+  },
+  mounted: function () {
+    this.x2js = new X2JS();
   }
 }
 </script>

@@ -4,6 +4,7 @@
     <div class="row">
        <div class="col-sm">
          <data-source></data-source>
+         <vk-auth></vk-auth>
        </div>
     </div>
   </div>
@@ -11,6 +12,7 @@
 
 <script>
 import DataSource from '@/components/settings_datasource'
+import VkAuth from '@/components/settings_vk_auth'
 
 export default {
   name: 'Settings',
@@ -20,7 +22,8 @@ export default {
     }
   },
   components: {
-    DataSource
+    DataSource,
+    VkAuth
   }
 }
 </script>
