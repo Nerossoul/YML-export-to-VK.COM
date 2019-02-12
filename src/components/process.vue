@@ -1,11 +1,18 @@
 <template>
 <div>
     <h2>{{ msg }}</h2>
-    {{ store_test }}
+    <div class="alert alert-primary" role="alert" v-if="!active_link.activeLink">
+      {{ active_link.message }} <router-link to='/settings'>НАСТРОИТЬ </router-link>
+    </div>
+    <div v-else>
+      Тут будет интерфейс выгрузки;
+      !!!
+    </div>
 </div>
 </template>
 
 <script>
+/* eslint-disable */
 export default {
   name: 'Process',
   data () {
@@ -14,8 +21,31 @@ export default {
     }
   },
   computed: {
-    store_test () {
-      return this.$store.state.access_token
+    active_link () {
+      let result = {
+        message: '',
+        activeLink: true
+      }
+      if (this.$store.state.products.length < 1) {
+        result.message += 'Не получены товары. '
+        result.activeLink = false
+      }
+      if (this.$store.state.categories.length < 1) {
+        result.message += 'Не получены категории. '
+        result.activeLink = false
+      }
+      if (this.$store.state.access_token === 'no_token') {
+        result.message += 'Нет токена авторизации. '
+        result.activeLink = false
+      }
+      if (this.$store.state.group_id === '') {
+        result.message += 'Group Id expected. '
+        result.activeLink = false
+      }
+      if (result.message === '') {
+        result.activeLink = true
+      }
+      return result
     }
   }
 }

@@ -10,13 +10,13 @@
         </div>
       </div>
       <div v-else >
-        <div v-if="xmlObj.NoData"><button type="button" name="button" class="btn btn-dark" @click="getData">Получить данные</button></div>
+        <div v-if="!isData"><button type="button" name="button" class="btn btn-dark" @click="getData">Получить данные</button></div>
       </div>
     </div>
   </div>
-  <div v-if="!xmlObj.NoData" class="card">
+  <div v-if="isData" class="card">
     <div class="card-body">
-      <h5 class="card-title">Текущие данные:</h5>
+      <h5 class="card-title">Текущие данные от {{ sourceDate }}:</h5>
       <p class="card-text">Категории: {{ categories.length }}</p>
       <p class="card-text">Товары: {{ products.length }}</p>
     </div>
@@ -25,25 +25,40 @@
 </template>
 
 <script>
-
+/* eslint-disable */
 export default {
   name: 'settings_datasource',
   data () {
     return {
       // TODO: ymlSourceLink must be user setable and saved to localstorege
       ymlSourceLink: 'https://playavto.ru/export/yandex_yml.xml',
-      xmlObj: { NoData: true },
-      categories: [],
-      products: [],
+      xmlObj: {},
       isGettingDataNow: false,
       gettingDataText: 'Получаем данные...',
-      x2js: ' '
+      x2js: ' ',
+      sourceDate: ''
     }
   },
   watch: {
     xmlObj () {
-      this.categories = this.xmlObj.yml_catalog.shop.categories.category
-      this.products = this.xmlObj.yml_catalog.shop.offers.offer
+      this.$store.state.products = this.xmlObj.yml_catalog.shop.offers.offer
+      this.$store.state.categories = this.xmlObj.yml_catalog.shop.categories.category
+      this.sourceDate = this.xmlObj.yml_catalog._date
+    }
+  },
+  computed: {
+    categories () {
+      return this.$store.state.categories
+    },
+    products () {
+      return this.$store.state.products
+    },
+    isData () {
+      if (this.$store.state.categories.length > 0 && 
+          this.$store.state.products.length > 0) {
+            return true
+          }
+      return false
     }
   },
   methods: {
