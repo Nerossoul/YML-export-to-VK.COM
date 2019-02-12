@@ -5,14 +5,15 @@
       {{ active_link.message }} <router-link to='/settings'>НАСТРОИТЬ </router-link>
     </div>
     <div v-else>
-      Тут будет интерфейс выгрузки;
-      !!!
+      <vk-api></vk-api>
     </div>
 </div>
 </template>
 
 <script>
 /* eslint-disable */
+import vkApi from '@/components/process_vk_api'
+
 export default {
   name: 'Process',
   data () {
@@ -47,6 +48,9 @@ export default {
       }
       return result
     }
+  },
+  components: {
+    vkApi
   }
 }
 </script>
