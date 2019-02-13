@@ -20,3 +20,18 @@ function _vkApi_call($method, $params = array()) {
 
   return $response;
 }
+
+function _vkApi_post_call($method, $params = array()) {
+  $postdata = http_build_query($params);
+  $opts = array('http' =>
+      array(
+        'method'  => 'POST',
+        'header'  => 'Content-type: application/x-www-form-urlencoded',
+        'content' => $postdata
+      )
+  );
+  $url = VK_API_ENDPOINT.$method;
+  $context  = stream_context_create($opts);
+  $response = file_get_contents($url, false, $context);
+  return $response;
+}

@@ -15,6 +15,6 @@ function _callback_response($data) {
 }
 
 $callObj = _callback_getEvent();
-$result = _vkApi_call($callObj['method'], $callObj['params']);
+$result = _vkApi_post_call($callObj['method'], $callObj['params']);
 _callback_response(json_encode($result));
 ?>
