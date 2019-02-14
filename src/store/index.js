@@ -8,6 +8,6 @@ export default new Vuex.Store({
     products: [],
     categories: [],
     access_token: 'no_token',
-    group_id: ''
+    group_id: '141827527'
   }
 })

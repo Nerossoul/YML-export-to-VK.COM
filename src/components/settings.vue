@@ -3,9 +3,10 @@
     <h2>{{ msg }}</h2>
     <div class="row">
        <div class="col-sm">
-         <data-source></data-source>
-         <br>
          <vk-auth></vk-auth>
+       </div>
+       <div class="col-sm">
+         <data-source></data-source>
        </div>
     </div>
   </div>

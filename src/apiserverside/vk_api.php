@@ -1,9 +1,8 @@
 <?php
-
-define('VK_API_ENDPOINT', 'https://api.vk.com/method/');
+require_once ('config.php');
 
 function _vkApi_call($method, $params = array()) {
-
+  $params['v'] = VK_API_VERSION;
   $query = http_build_query($params);
   $url = VK_API_ENDPOINT.$method.'?'.$query;
   $curl = curl_init($url);
@@ -13,15 +12,13 @@ function _vkApi_call($method, $params = array()) {
   if ($error) {
     throw new Exception("Failed {$method} request");
   }
-
   curl_close($curl);
-
   $response = json_decode($json, true);
-
   return $response;
 }
 
 function _vkApi_post_call($method, $params = array()) {
+  $params['v'] = VK_API_VERSION;
   $postdata = http_build_query($params);
   $opts = array('http' =>
       array(

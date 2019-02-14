@@ -3,13 +3,19 @@
   <div class="card">
     <div class="card-body">
       <h5 class="card-title">Авторизация в контакте:</h5>
-      <!-- a type="button" :href="user_auth_link_to_get_code" name="button" target="_blank" class="btn btn-dark">Get code</a><br -->
-      Group ID
+      <div v-if="this.$store.state.access_token == 'no_token'">
+        Вы не авторизованы!!!<br>
+        <a type="button" :href="user_auth_link_to_get_code" name="button" class="btn btn-dark">Авторизоваться</a><br>
+      </div>
+      <div v-else>
+        ВЫ успешно авторизованы<br>
+        Ваш токен: {{ this.$store.state.access_token }}
+      </div>
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Укажите группу:</h5>
+      Group ID. <br>Укажите 1 раз убдет сохранена в вашем браузере. но пока сохранение не рабтает <br>
       <input v-model="localGroupId" type="text">{{ this.$store.state.group_id }}<br>
-      <!-- a type="button" :href="group_auth_link_to_get_access_token" name="button" target="_blank" class="btn btn-dark">Get access token</a><br -->
-      Вставьте ваш токен сюда.
-      <input v-model="localAccessToken" type="password">
-      {{ this.$store.state.access_token }}
     </div>
   </div>
 </div>
@@ -22,17 +28,19 @@ export default {
   data () {
     return {
       localGroupId: '',
-      user_auth_link_to_get_code: 'https://oauth.vk.com/authorize?client_id=6848088&display=page&response_type=code&scope=134479876&v=5.92',
-      group_auth_link_to_get_access_token: 'https://oauth.vk.com/access_token?',
-      localAccessToken: ''
+      redirectUrl: 'https://playavto.ru/vk_export/server/vk_auth.php',
+      user_auth_link_to_get_code: 'https://oauth.vk.com/authorize?client_id=6860578&display=popup&redirect_uri=https://playavto.ru/vk_export/server/vk_auth.php&response_type=code&scope=134479876&v=5.92'
     }
   },
   watch: {
-    localAccessToken () {      
-      this.$store.state.access_token = this.localAccessToken
-    },
     localGroupId () {
       this.$store.state.group_id = this.localGroupId
+    }
+  },
+  mounted: function () {
+    if( typeof this.$route.query.access_token != 'undefined' ) {
+      this.$store.state.access_token = this.$route.query.access_token
+      this.$router.push('/settings')
     }
   }
 }
