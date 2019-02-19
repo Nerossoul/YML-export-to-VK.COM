@@ -36,14 +36,14 @@ export default {
       isGettingDataNow: false,
       gettingDataText: 'Получаем данные...',
       x2js: ' ',
-      sourceDate: ''
     }
   },
   watch: {
     xmlObj () {
       this.$store.state.products = this.xmlObj.yml_catalog.shop.offers.offer
       this.$store.state.categories = this.xmlObj.yml_catalog.shop.categories.category
-      this.sourceDate = this.xmlObj.yml_catalog._date
+      this.$store.state.sourceDate = this.xmlObj.yml_catalog._date
+      document.title = 'VK EXPORT:( 0/' +this.$store.state.products.length + ' )' 
     }
   },
   computed: {
@@ -53,6 +53,9 @@ export default {
     products () {
       return this.$store.state.products
     },
+    sourceDate() {
+      return this.$store.state.sourceDate
+    }, 
     isData () {
       if (this.$store.state.categories.length > 0 && 
           this.$store.state.products.length > 0) {
@@ -65,7 +68,6 @@ export default {
     getData () {
       this.isGettingDataNow = true
       this.file_get_contents()
-      // https://lage.us/Javascript-File-Get-Contents.html
     },
     file_get_contents () {
       var context = this

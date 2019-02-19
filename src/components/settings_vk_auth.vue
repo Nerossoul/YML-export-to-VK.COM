@@ -9,14 +9,14 @@
       </div>
       <div v-else>
         ВЫ успешно авторизованы<br>
-        Ваш токен: {{ this.$store.state.access_token }}
+        <div class="mt-2">
+          <h5 class="card-title">Укажите группу:</h5>
+          Group ID. {{ this.$store.state.group_id }} <br>Укажите 1 раз убдет сохранена в вашем браузере. но пока сохранение не рабтает <br>
+          <input v-model="localGroupId" type="text"><br>
+        </div>
       </div>
     </div>
-    <div class="card-body">
-      <h5 class="card-title">Укажите группу:</h5>
-      Group ID. <br>Укажите 1 раз убдет сохранена в вашем браузере. но пока сохранение не рабтает <br>
-      <input v-model="localGroupId" type="text">{{ this.$store.state.group_id }}<br>
-    </div>
+
   </div>
 </div>
 </template>
