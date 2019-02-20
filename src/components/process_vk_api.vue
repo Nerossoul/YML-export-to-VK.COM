@@ -59,10 +59,10 @@ export default {
       this._onwApi_call(methodString,params)
     },
 
-    photos_getMarketUploadServer(main_photo = 0) {
+    photos_getMarketUploadServer(main_photo = 0) { 
       let methodString = 'photos.getMarketUploadServer'
       let params = {
-        'group_id' : this.$store.state.group_id, //положительное число, обязательный параметр
+        'group_id' :  this.$store.state.group_id,//положительное число, обязательный параметр
         'main_photo' : main_photo, //является ли фотография обложкой товара (1 — фотография для обложки, 0 — дополнительная фотография) флаг, может принимать значения 1 или 0
         'crop_x' : 2400, //координата x для обрезки фотографии (верхний правый угол). положительное число
         'crop_y' : 2400, //координата y для обрезки фотографии (верхний правый угол). положительное число
@@ -71,7 +71,7 @@ export default {
       this._onwApi_call(methodString,params)
     },
 
-    upload_file(upload_url, file_link) {
+    upload_file(upload_url, file_link) { 
       let methodString = 'upload_file'
       let params = {
         'upload_url' : upload_url,
@@ -79,7 +79,24 @@ export default {
       }
       this._onwApi_call(methodString,params)
     },
+    photos_saveMarketPhoto (photo,server,hash,crop_data,crop_hash) {
+      let methodString = 'photos.saveMarketPhoto'
+      let params = {
+      'group_id' : this.$store.state.group_id, //идентификатор группы, для которой нужно загрузить фотографию. положительное число
+      'photo' :  photo, //параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
+      'server' :  server,//параметр, возвращаемый в результате загрузки фотографии на сервер. целое число, обязательный параметр
+      'hash' : hash,//параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
+      'crop_data' : crop_data,//параметр, возвращаемый в результате загрузки фотографии на сервер. строка
+      'crop_hash' : crop_hash
+      }
+      this._onwApi_call(methodString,params)
+    },
 
+    upload_photoToVkGroupCommonMethod(file_link) {
+     
+
+
+    },
     _onwApi_call (method, params) {
       let url = this.ownApiServer
       params.access_token = this.$store.state.access_token
