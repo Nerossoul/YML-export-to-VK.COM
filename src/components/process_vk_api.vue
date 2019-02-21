@@ -11,7 +11,7 @@
         </div>
         <div class="col-sm">
           <div class="card">
-            <button type="button" class="btn btn-outline-secondary"  @click="market_get">Получть подборки</button>
+            <button type="button" class="btn btn-outline-secondary"  @click="upload_photoToVkGroupCommonMethod('https://playavto.ru/image/import_files/91/91ceb3bd-437a-11e8-bd9c-408d5c3aa21e_91ceb3bf-437a-11e8-bd9c-408d5c3aa21e.jpeg', 1) ">common file upload</button>
           </div>
         </div>
         <div class="col-sm">
@@ -68,7 +68,7 @@ export default {
         'crop_y' : 2400, //координата y для обрезки фотографии (верхний правый угол). положительное число
         'crop_width' : 2400, //ширина фотографии после обрезки в px. положительное число, минимальное значение 400
       }
-      this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString,params)
     },
 
     upload_file(upload_url, file_link) { 
@@ -92,10 +92,20 @@ export default {
       this._onwApi_call(methodString,params)
     },
 
-    upload_photoToVkGroupCommonMethod(file_link) {
-     
-
-
+    upload_photoToVkGroupCommonMethod(file_link, main_photo = 0) {
+      let file_uploader = new Promise(async (resolve, reject) => {
+        console.log('promise function')
+        let response = await this.photos_getMarketUploadServer(main_photo)
+        resolve(response)
+      })
+      file_uploader
+      .then(result => {
+          let json_result = JSON.parse(result)
+          return json_result.response.upload_url
+        }
+      ).then(url=>{
+        console.log(url)
+      });
     },
     _onwApi_call (method, params) {
       let url = this.ownApiServer
@@ -110,11 +120,12 @@ export default {
         mode: 'cors',
         headers: { 'Content-Type': 'application/json; charset=utf-8'}
       }).then((result) => {
-        //return result.json()
-        return result.text()
-      }).then((text)=>{
-        this.responce_text = text
-        console.log(this.responce_text)
+        return result.json()
+        //return result.text()
+      }).then((json)=>{
+        this.responce_text = json
+        //console.log(this.responce_text)
+        return json
       })
     }
   }

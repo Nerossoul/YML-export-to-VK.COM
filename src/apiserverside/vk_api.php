@@ -42,7 +42,8 @@ function vkApi_upload($upload_url, $file_link) {
   $path = (parse_url($file_link));
   $file_link = $_SERVER['DOCUMENT_ROOT'] . $path['path'];
   if (!file_exists($file_link)) {
-    throw new Exception('<br>File not found: '.$file_link);
+    $response = array('error' => 'File not found: '.$file_link);
+    return $response;
   }
   $upload_url = stripslashes($upload_url);
   $upload_url = stripslashes($upload_url);
@@ -54,15 +55,21 @@ function vkApi_upload($upload_url, $file_link) {
   $json = curl_exec($curl);
   $error = curl_error($curl);
   if ($error) {
-    var_dump($error);
-    throw new Exception("<br>Failed {$upload_url} request");
+    $response = array(
+      'error' => array(
+        'error_text' => 'Failed {$upload_url} request',
+        'error_full' => $error
+      )
+    );
+    return $response;
   }
-
   curl_close($curl);
-
   $response = json_decode($json, true);
   if (!$response) {
-    throw new Exception("Invalid response for {$upload_url} request");
+    $response = array(
+        'error' => "Invalid response for {$upload_url} request",
+    );
+    return $response;
   }
 
   return $response;
