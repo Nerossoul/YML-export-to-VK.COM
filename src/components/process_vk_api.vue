@@ -34,7 +34,8 @@ export default {
     return {
       msg: 'vk',
       ownApiServer: 'https://playavto.ru/vk_export/server/',
-      responce_text: ''
+      responce_text: '',
+      sleeping_period: 1000
     }
   },
   methods: {
@@ -77,7 +78,7 @@ export default {
         'upload_url' : upload_url,
         'file_link' : file_link
       }
-      this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString,params)
     },
     photos_saveMarketPhoto (photo,server,hash,crop_data,crop_hash) {
       let methodString = 'photos.saveMarketPhoto'
@@ -89,23 +90,45 @@ export default {
       'crop_data' : crop_data,//параметр, возвращаемый в результате загрузки фотографии на сервер. строка
       'crop_hash' : crop_hash
       }
-      this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString,params)
     },
 
     upload_photoToVkGroupCommonMethod(file_link, main_photo = 0) {
       let file_uploader = new Promise(async (resolve, reject) => {
-        console.log('promise function')
         let response = await this.photos_getMarketUploadServer(main_photo)
         resolve(response)
       })
       file_uploader
-      .then(result => {
-          let json_result = JSON.parse(result)
-          return json_result.response.upload_url
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(async (result) => {
+          let response = await this.upload_file(result.response.upload_url, file_link)
+          return response
         }
-      ).then(url=>{
-        console.log(url)
-      });
+      )
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(async (uploaded_file_info) => {
+        let photo = uploaded_file_info.photo
+        let server =uploaded_file_info.server
+        let hash =uploaded_file_info.hash
+        let crop_data =uploaded_file_info.crop_data
+        let crop_hash =uploaded_file_info.crop_hash
+        let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
+        return response
+      })
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(saved_photo_info=>{
+        let photo_id = saved_photo_info.response[0].id
+        return photo_id
+      })
     },
     _onwApi_call (method, params) {
       let url = this.ownApiServer
@@ -123,9 +146,16 @@ export default {
         return result.json()
         //return result.text()
       }).then((json)=>{
-        this.responce_text = json
-        //console.log(this.responce_text)
-        return json
+        this.responce_text = {
+          method : method,
+          response: json
+        }
+        console.log(this.responce_text)
+        if (typeof json == 'object') {
+          return json
+        } else {
+          return JSON.parse(json)
+        }
       })
     }
   }
