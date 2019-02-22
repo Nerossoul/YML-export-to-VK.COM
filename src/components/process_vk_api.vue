@@ -2,11 +2,10 @@
 <template>
   <div class="card mt-3">
       <h2>{{ msg }}</h2>
-
       <div class="row mt-2">
         <div class="col-sm">
           <div class="card">
-            <button type="button" class="btn btn-outline-secondary" @click="upload_file('https:\\\/\\\/pu.vk.com\\\/c850520\\\/upload.php?act=do_add&mid=27533458&aid=-53&gid=81204119&hash=9ead3841837df05bf1b02cccb4cffed4&rhash=a744c7d9b9b8368d8d25756458064b49&swfupload=1&api=1&market_main_photo=1&_crop=2400,2400,2400', 'https://playavto.ru/image/import_files/91/91ceb3bd-437a-11e8-bd9c-408d5c3aa21e_91ceb3bf-437a-11e8-bd9c-408d5c3aa21e.jpeg')">upload</button>
+            <button type="button" class="btn btn-outline-secondary" @click="market_search('00000002043')">Search</button>
           </div>
         </div>
         <div class="col-sm">
@@ -80,6 +79,7 @@ export default {
       }
       return this._onwApi_call(methodString,params)
     },
+    
     photos_saveMarketPhoto (photo,server,hash,crop_data,crop_hash) {
       let methodString = 'photos.saveMarketPhoto'
       let params = {
@@ -130,6 +130,55 @@ export default {
         return photo_id
       })
     },
+
+    market_search(model_id) {
+      
+      let methodString = 'market.search'
+      let params = {
+        'owner_id' : '-' + this.$store.state.group_id, //идентификатор сообщества, которому принадлежат товары. целое число, обязательный параметр
+        'album_id' : 0, //идентификатор подборки, товары из которой нужно вернуть. положительное число, по умолчанию 0
+        'q' : '#' +  model_id, //строка поискового запроса. Например, зеленые тапочки. строка
+        'price_from' : 0, //минимальное значение цены товаров в сотых долях единицы валюты. Например, 100000. положительное число
+        'price_to' : 1000000000, //максимальное значение цены товаров в сотых долях единицы валюты. Например, 1410000. положительное число
+        'sort' : 3,//вид сортировки. 0 — пользовательская расстановка, 1 — по дате добавления товара, 2 — по цене, 3 — по популярности. целое число, по умолчанию 0
+        'rev0' : 0, //— не использовать обратный порядок, 1 — использовать обратный порядок. положительное число, по умолчанию 1
+        'offset' : 0,//смещение относительно первого найденного товара для выборки определенного подмножества. положительное число
+        'count' : 200, //количест
+      }
+      return this._onwApi_call(methodString,params)
+    },
+
+    market_edit(item_id,name,description,price,main_photo_id,photo_ids) {
+      let methodString = 'market.search'
+      let params = {
+      'owner_id'      : '-' + this.$store.state.group_id,
+      'item_id'       : item_id,
+      'name'          : name,
+      'description'   : description,
+      'category_id'   : 205,
+      'price'         : price,
+      'deleted'       : 0,
+      'main_photo_id' : main_photo_id, 
+      'photo_ids'     : photo_ids,
+      }
+      return this._onwApi_call(methodString,params)
+    },
+
+    market_add(name,description,price,main_photo_id,photo_ids) {
+      let methodString = 'market.search'
+      let params = {
+        'owner_id'      : '-' + this.$store.state.group_id,
+        'name'          : name,
+        'description'   : description,
+        'category_id'   : 205,
+        'price'         : price,
+        'deleted'       : 0,
+        'main_photo_id' : main_photo_id, 
+        'photo_ids'     : photo_ids,
+      }
+      return this._onwApi_call(methodString,params)
+    },
+
     _onwApi_call (method, params) {
       let url = this.ownApiServer
       params.access_token = this.$store.state.access_token
