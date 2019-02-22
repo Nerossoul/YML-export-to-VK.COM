@@ -21,6 +21,11 @@
       <p class="card-text">Товары: {{ products.length }}</p>
     </div>
   </div>
+  <div v-if="isData" class="">
+    <div class="mt-3 card">
+        <div v-for="(value, key) in products[500]" :key="value.id" class="border border-primary mt-1"><h4>{{key}}</h4>{{value}}</div>
+    </div>
+  </div>
 </div>
 </template>
 

@@ -5,6 +5,8 @@
        <div class="col-sm">
          <vk-auth></vk-auth>
        </div>
+    </div>
+    <div class="row">
        <div class="col-sm" v-if="this.$store.state.access_token != 'no_token'">
          <data-source></data-source>
        </div>

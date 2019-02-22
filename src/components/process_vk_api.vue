@@ -5,7 +5,7 @@
       <div class="row mt-2">
         <div class="col-sm">
           <div class="card">
-            <button type="button" class="btn btn-outline-secondary" @click="market_search('00000002043')">Search</button>
+            <button type="button" class="btn btn-outline-secondary" @click="prepare_ProductData(500) ">Подготовить товар</button>
           </div>
         </div>
         <div class="col-sm">
@@ -21,6 +21,8 @@
       </div>
       <br>
       {{ responce_text }}
+      <hr>
+       <div v-for="(value, key) in prepared_product_data" :key="value.id" class="border border-primary mt-1"><h4>{{key}}</h4>{{value}}</div>
   </div>
 </template>
 
@@ -34,7 +36,8 @@ export default {
       msg: 'vk',
       ownApiServer: 'https://playavto.ru/vk_export/server/',
       responce_text: '',
-      sleeping_period: 1000
+      sleeping_period: 400,
+      prepared_product_data: {}
     }
   },
   methods: {
@@ -59,11 +62,11 @@ export default {
       this._onwApi_call(methodString,params)
     },
 
-    photos_getMarketUploadServer(main_photo = 0) { 
+    photos_getMarketUploadServer() { 
       let methodString = 'photos.getMarketUploadServer'
       let params = {
         'group_id' :  this.$store.state.group_id,//положительное число, обязательный параметр
-        'main_photo' : main_photo, //является ли фотография обложкой товара (1 — фотография для обложки, 0 — дополнительная фотография) флаг, может принимать значения 1 или 0
+        'main_photo' : 1, //является ли фотография обложкой товара (1 — фотография для обложки, 0 — дополнительная фотография) флаг, может принимать значения 1 или 0
         'crop_x' : 2400, //координата x для обрезки фотографии (верхний правый угол). положительное число
         'crop_y' : 2400, //координата y для обрезки фотографии (верхний правый угол). положительное число
         'crop_width' : 2400, //ширина фотографии после обрезки в px. положительное число, минимальное значение 400
@@ -91,44 +94,6 @@ export default {
       'crop_hash' : crop_hash
       }
       return this._onwApi_call(methodString,params)
-    },
-
-    upload_photoToVkGroupCommonMethod(file_link, main_photo = 0) {
-      let file_uploader = new Promise(async (resolve, reject) => {
-        let response = await this.photos_getMarketUploadServer(main_photo)
-        resolve(response)
-      })
-      file_uploader
-      .then(x => new Promise(resolve => setTimeout(() => {
-        console.log('pause: '+ this.sleeping_period + " ms has been ended")
-        resolve(x)
-        }, this.sleeping_period)))
-      .then(async (result) => {
-          let response = await this.upload_file(result.response.upload_url, file_link)
-          return response
-        }
-      )
-      .then(x => new Promise(resolve => setTimeout(() => {
-        console.log('pause: '+ this.sleeping_period + " ms has been ended")
-        resolve(x)
-        }, this.sleeping_period)))
-      .then(async (uploaded_file_info) => {
-        let photo = uploaded_file_info.photo
-        let server =uploaded_file_info.server
-        let hash =uploaded_file_info.hash
-        let crop_data =uploaded_file_info.crop_data
-        let crop_hash =uploaded_file_info.crop_hash
-        let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
-        return response
-      })
-      .then(x => new Promise(resolve => setTimeout(() => {
-        console.log('pause: '+ this.sleeping_period + " ms has been ended")
-        resolve(x)
-        }, this.sleeping_period)))
-      .then(saved_photo_info=>{
-        let photo_id = saved_photo_info.response[0].id
-        return photo_id
-      })
     },
 
     market_search(model_id) {
@@ -179,6 +144,98 @@ export default {
       return this._onwApi_call(methodString,params)
     },
 
+    prepare_ProductData(array_index) {
+      let file_uploader = new Promise(async (resolve, reject) => {
+        let productPhotoUrls = this.$store.state.products[array_index].picture
+        let photoCounter = 0
+        let main_photo_id = ''
+        let photo_ids = ''
+        let separator = ''
+        for (let item of productPhotoUrls) {
+          ++photoCounter
+          if (photoCounter == 1) {
+            main_photo_id = await this.upload_photoToVkGroupCommonMethod(item)
+          } else if (photoCounter<=5) {
+            if (photo_ids != '') {separator = ','}
+            photo_ids += separator + await this.upload_photoToVkGroupCommonMethod(item)
+          } else {
+            console.log('break')
+            break
+          }
+          console.log('main_photo_id: ' + main_photo_id)
+          console.log('photo_ids: ' + photo_ids)
+        }
+        resolve([main_photo_id,photo_ids])
+      })
+      .then((photo_id_array) => {
+        this.prepared_product_data = this.$store.state.products[array_index]
+        let onStore = 'НЕТ. Товар в пути. НАПИШИТЕ ПРОДАВЦУ что бы узнать дату поступления на склад.'
+        if (this.prepared_product_data._available) {
+          onStore = 'ДА'
+        }
+        this.prepared_product_data._available
+        let productSiteUrl = this.prepared_product_data.url
+        let vendorCode = this.prepared_product_data.vendorCode
+        let description = this.prepared_product_data.description
+        description = description.replace( /\s{2,}/g, " " )
+        description = 'Артикул товара: #' + vendorCode + ` 
+          %0A Наличие на складе: ` + onStore + `
+          %0A Ссылка на сайт: ` + productSiteUrl + '?utm_source=vk.com&utm_medium=group_shop&utm_campaign=vk.com_group_shop&utm_content=product_'+ vendorCode +`
+          %0A ОПИСАНИЕ ТОВАРА:
+          `+ description
+        let data = {
+          'name'          : this.prepared_product_data.name,
+          'description'   : description,
+          'category_id'   : 205,
+          'price'         : this.prepared_product_data.price,
+          'deleted'       : 0,
+          'main_photo_id' : photo_id_array[0], 
+          'photo_ids'     : photo_id_array[1],
+        }
+        this.prepared_product_data = data
+        return data
+      })
+    },
+
+    upload_photoToVkGroupCommonMethod(file_link) {
+      console.log('----------------------------------------')
+      console.log('Uploading new photo')
+      return new Promise(async (resolve, reject) => {
+        let response = await this.photos_getMarketUploadServer()
+        resolve(response)
+      })
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(async (result) => {
+          let response = await this.upload_file(result.response.upload_url, file_link)
+          return response
+        }
+      )
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(async (uploaded_file_info) => {
+        let photo = uploaded_file_info.photo
+        let server =uploaded_file_info.server
+        let hash =uploaded_file_info.hash
+        let crop_data =uploaded_file_info.crop_data
+        let crop_hash =uploaded_file_info.crop_hash
+        let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
+        return response
+      })
+      .then(x => new Promise(resolve => setTimeout(() => {
+        console.log('pause: '+ this.sleeping_period + " ms has been ended")
+        resolve(x)
+        }, this.sleeping_period)))
+      .then(saved_photo_info=>{
+        let photo_id = saved_photo_info.response[0].id
+        return photo_id
+      })
+    },
+
     _onwApi_call (method, params) {
       let url = this.ownApiServer
       params.access_token = this.$store.state.access_token
@@ -193,10 +250,10 @@ export default {
         headers: { 'Content-Type': 'application/json; charset=utf-8'}
       }).then((result) => {
         return result.json()
-        //return result.text()
       }).then((json)=>{
         this.responce_text = {
           method : method,
+          params : params,
           response: json
         }
         console.log(this.responce_text)
