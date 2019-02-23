@@ -15,12 +15,12 @@
         </div>
         <div class="col-sm">
           <div class="card">
-            <button type="button" class="btn btn-outline-secondary"  @click="photos_getMarketUploadServer(1)">upload server</button>
+            <button type="button" class="btn btn-outline-secondary"  @click="isProductInMarket('000000021307')">Is product in market</button>
           </div>
         </div>
       </div>
       <br>
-      {{ responce_text }}
+      {{ response_text }}
       <hr>
        <div v-for="(value, key) in prepared_product_data" :key="value.id" class="border border-primary mt-1"><h4>{{key}}</h4>{{value}}</div>
   </div>
@@ -35,7 +35,7 @@ export default {
     return {
       msg: 'vk',
       ownApiServer: 'https://playavto.ru/vk_export/server/',
-      responce_text: '',
+      response_text: '',
       sleeping_period: 400,
       prepared_product_data: {}
     }
@@ -96,8 +96,7 @@ export default {
       return this._onwApi_call(methodString,params)
     },
 
-    market_search(model_id) {
-      
+    market_search(model_id) {      
       let methodString = 'market.search'
       let params = {
         'owner_id' : '-' + this.$store.state.group_id, //идентификатор сообщества, которому принадлежат товары. целое число, обязательный параметр
@@ -144,8 +143,28 @@ export default {
       return this._onwApi_call(methodString,params)
     },
 
+    isProductInMarket(model_id) {
+      console.log('-Is ' + model_id + ' in market?')
+      return new Promise(async (resolve, reject) => {
+        let searchResult = await this.market_search(model_id) 
+        resolve(searchResult)
+      }).then(searchResult=>{
+        if (searchResult.response.count > 0) {
+      console.log('-YES! The ' + model_id + ' is in market')
+          return true
+        } else {
+      console.log('-NO! The ' + model_id + ' isn\'t in market')
+          return false
+        }
+      })
+
+    },
+    export_AllProductsToVk() {
+
+    },
+
     prepare_ProductData(array_index) {
-      let file_uploader = new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         let productPhotoUrls = this.$store.state.products[array_index].picture
         let photoCounter = 0
         let main_photo_id = ''
@@ -201,6 +220,8 @@ export default {
       console.log('----------------------------------------')
       console.log('Uploading new photo')
       return new Promise(async (resolve, reject) => {
+        console.log('Getting Upload Server')
+        // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer()
         resolve(response)
       })
@@ -209,10 +230,11 @@ export default {
         resolve(x)
         }, this.sleeping_period)))
       .then(async (result) => {
-          let response = await this.upload_file(result.response.upload_url, file_link)
-          return response
-        }
-      )
+        // TODO make reject scenario
+        console.log('Uploading photo to server')
+        let response = await this.upload_file(result.response.upload_url, file_link)
+        return response
+      })
       .then(x => new Promise(resolve => setTimeout(() => {
         console.log('pause: '+ this.sleeping_period + " ms has been ended")
         resolve(x)
@@ -223,6 +245,8 @@ export default {
         let hash =uploaded_file_info.hash
         let crop_data =uploaded_file_info.crop_data
         let crop_hash =uploaded_file_info.crop_hash
+        // TODO make reject scenario
+        console.log('Saving uploaded photo')
         let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
         return response
       })
@@ -251,12 +275,13 @@ export default {
       }).then((result) => {
         return result.json()
       }).then((json)=>{
-        this.responce_text = {
+        params.access_token = 'hidden'
+        this.response_text = {
           method : method,
           params : params,
           response: json
         }
-        console.log(this.responce_text)
+        console.log(this.response_text)
         if (typeof json == 'object') {
           return json
         } else {
