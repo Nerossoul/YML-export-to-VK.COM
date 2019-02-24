@@ -26,7 +26,7 @@ export default {
     return {
       ownApiServer: 'https://playavto.ru/vk_export/server/',
       response_text: '',
-      sleeping_period: 2000,
+      sleeping_period: 400,
       sleeping_period_text: ' ⏸️️ Pause end. (ms)-',
       prepared_product_data: {},
       current_product: {},
@@ -234,7 +234,6 @@ export default {
           this.logCurrentAction() // очистить лог.
           ++productCounter
           document.title = 'VK EXPORT:( '+ productCounter +'/' +this.$store.state.products.length + ' )'
-          break
         }
         resolve('DONE!')
       })
@@ -251,7 +250,8 @@ export default {
         let main_photo_id = ''
         let photo_ids = ''
         let separator = ''
-        for (let item of productPhotoUrls) {
+        if (Array.isArray(productPhotoUrls)) {
+          for (let item of productPhotoUrls) {
           ++photoCounter
           if (photoCounter == 1) {
             main_photo_id = await this.upload_photoToVkGroupCommonMethod(item)
@@ -264,8 +264,12 @@ export default {
           }
           console.log('main_photo_id: ' + main_photo_id)
           console.log('photo_ids: ' + photo_ids)
+          }
+          resolve([main_photo_id,photo_ids])
+        } else {
+          main_photo_id = await this.upload_photoToVkGroupCommonMethod(productPhotoUrls)
+          resolve([main_photo_id,''])
         }
-        resolve([main_photo_id,photo_ids])
       })
       .then((photo_id_array) => {
         this.prepared_product_data = this.$store.state.products[array_index]
@@ -345,6 +349,14 @@ export default {
         this.logCurrentAction('OK')
         return photo_id
       })
+      .catch(async (error)=>{
+        console.log('^^^^^^^^^^^^^^^')
+        console.error(error)
+        console.log('ERROR UPLOADING PHOTO: Skip this link')
+        this.logCurrentAction('Ошибка загрузки фото. Пропускаем данную ссылку.')
+        // let response = await this.upload_photoToVkGroupCommonMethod(file_link)
+        return ''
+      })
     },
 
     _onwApi_call (method, params) {
@@ -374,6 +386,14 @@ export default {
         } else {
           return JSON.parse(json)
         }
+      })
+      .catch(async (error)=>{
+        console.log('^^^^^^^^^^^^^^^')
+        console.error(error)
+        console.log('ERROR API CALL: RETRY')
+        this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.')
+        let response = await this._onwApi_call (method, params)
+        return response
       })
     },
 
