@@ -161,11 +161,11 @@ export default {
       .then(searchResult=>{
         if (searchResult.response.count > 0) {
           console.log('-YES! The ' + model_id + ' is in market')
-          this.logCurrentAction('Есть в группе. Запуск процесса обновления')
+          this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
           return searchResult.response.items[0].id
         } else {
           console.log('-NO! The ' + model_id + ' isn\'t in market')
-          this.logCurrentAction('Нет в группе. Запуск процесса добавления')
+          this.logCurrentAction('Нет в группе. Запуск процесса добавления' + this.action_string_separator)
           return false
         }
       })
@@ -189,44 +189,44 @@ export default {
           let photo_ids = productPrepariedData.photo_ids
           if (market_item_id != false) {
             console.log( 'UPDATE PRODUCT! ' + market_item_id )
-            this.logCurrentAction('Отправляем запрос на изменение товара')
+            this.logCurrentAction('Отправляем запрос на изменение товара' + this.action_string_separator)
             let response = await this.market_edit(market_item_id,name,description,price,main_photo_id,photo_ids)
             if (response.response == 1) {
               console.log('Product updated')
-              this.logCurrentAction('Успешно!')
+              this.logCurrentAction('Успешно!' + this.action_string_separator)
             } else {
               console.log('Error update')
-              this.logCurrentAction('Oшибка: товар не обновлен!')
+              this.logCurrentAction('Oшибка: товар не обновлен!' + this.action_string_separator)
             }
           } else {
             console.log('ADD PRODUCT!')
-            this.logCurrentAction('Отправляем запрос на добавление товара')
+            this.logCurrentAction('Отправляем запрос на добавление товара' + this.action_string_separator)
             let response = await this.market_add(name,description,price,main_photo_id,photo_ids)
             try {
               if (response.response.market_item_id) {
                 console.log('Product added')
-                this.logCurrentAction('Успешно!')
+                this.logCurrentAction('Успешно!' + this.action_string_separator)
                 await this.pause(this.sleeping_period)
                 // TODO market addToAlbum is here
                 let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
                 let market_item_id = response.response.market_item_id
                 console.log('Add this product to album')
-                this.logCurrentAction('Дoбавляем данный товар в подбоку')
+                this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
                 let add_to_album_result = await this.market_addToAlbum(market_item_id, album_id)
                 if (add_to_album_result.response == 1) {
                   console.log('Product added to album')
-                  this.logCurrentAction('Успешно добавлен в подборку!')
+                  this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
                 } else {
                   console.log('Error add to album')
-                  this.logCurrentAction('Oшибка: товар не добавлен в подборку!')
+                  this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
                 }
               } else {
                 console.log('Error: Product is not added')
-                this.logCurrentAction('Oшибка: товар не добавлен!')
+                this.logCurrentAction('Oшибка: товар не добавлен!' + this.action_string_separator)
               }
             } catch(error) {
-              console.log('Catch Error: Product is not added')
-              this.logCurrentAction('Критическая ошибка: товар не добавлен!')
+              console.error('Catch Error: Product is not added')
+              this.logCurrentAction('Критическая ошибка: товар не добавлен!' + this.action_string_separator)
             }
             
           }
@@ -234,6 +234,7 @@ export default {
           this.logCurrentAction() // очистить лог.
           ++productCounter
           document.title = 'VK EXPORT:( '+ productCounter +'/' +this.$store.state.products.length + ' )'
+          break
         }
         resolve('DONE!')
       })
@@ -244,7 +245,7 @@ export default {
 
     prepare_ProductData(array_index) {
       return new Promise(async (resolve, reject) => {
-        this.logCurrentAction('Формируем запрос')
+        this.logCurrentAction('Формируем запрос' + this.action_string_separator)
         let productPhotoUrls = this.$store.state.products[array_index].picture
         let photoCounter = 0
         let main_photo_id = ''
@@ -297,7 +298,7 @@ export default {
           'photo_ids'     : photo_id_array[1],
         }
         this.prepared_product_data = data
-        this.logCurrentAction('Запрос сформирован')
+        this.logCurrentAction('Запрос сформирован' + this.action_string_separator)
         return data
       })
     },
@@ -305,12 +306,12 @@ export default {
     upload_photoToVkGroupCommonMethod(file_link) {
       console.log('----------------------------------------')
       console.log('Uploading new photo')
-      this.logCurrentAction('Loading photo')
+      this.logCurrentAction('Loading photo: ')
       return new Promise(async (resolve, reject) => {
         console.log('Getting Upload Server')
         // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer()
-        this.logCurrentAction('Photo:geting upload server ')
+        this.logCurrentAction('✓')
         resolve(response)
       })
       .then(x => new Promise(resolve => setTimeout(() => {
@@ -320,7 +321,7 @@ export default {
       .then(async (result) => {
         // TODO make reject scenario
         console.log('Uploading photo to server')
-        this.logCurrentAction('Photo: Uploading...')
+        this.logCurrentAction('✓')
         let response = await this.upload_file(result.response.upload_url, file_link)
         return response
       })
@@ -336,7 +337,7 @@ export default {
         let crop_hash =uploaded_file_info.crop_hash
         // TODO make reject scenario
         console.log('Saving uploaded photo')
-        this.logCurrentAction('Photo: saving')
+        this.logCurrentAction('✓')
         let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
         return response
       })
@@ -346,14 +347,14 @@ export default {
         }, this.sleeping_period)))
       .then(saved_photo_info=>{
         let photo_id = saved_photo_info.response[0].id
-        this.logCurrentAction('OK')
+        this.logCurrentAction('OK' + this.action_string_separator)
         return photo_id
       })
       .catch(async (error)=>{
         console.log('^^^^^^^^^^^^^^^')
         console.error(error)
         console.log('ERROR UPLOADING PHOTO: Skip this link')
-        this.logCurrentAction('Ошибка загрузки фото. Пропускаем данную ссылку.')
+        this.logCurrentAction(this.action_string_separator + 'Ошибка загрузки фото. Пропускаем данную ссылку.' + this.action_string_separator)
         // let response = await this.upload_photoToVkGroupCommonMethod(file_link)
         return ''
       })
@@ -391,14 +392,14 @@ export default {
         console.log('^^^^^^^^^^^^^^^')
         console.error(error)
         console.log('ERROR API CALL: RETRY')
-        this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.')
+        this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.' + this.action_string_separator)
         let response = await this._onwApi_call (method, params)
         return response
       })
     },
 
     logCurrentAction(action_string) {
-      this.action_string += action_string + this.action_string_separator
+      this.action_string += action_string
       if (arguments.length == 0) {
         this.action_string = ''
       }
