@@ -7,6 +7,8 @@ export default new Vuex.Store({
   state: {
     products: [],
     categories: [],
+    photoBase: {},
+    badPhotoIds: [],
     access_token: 'no_token',
     group_id: '81204119',
     sourceDate: '',

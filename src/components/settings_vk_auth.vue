@@ -11,8 +11,9 @@
         ВЫ успешно авторизованы<br>
         <div class="mt-2">
           <h5 class="card-title">Укажите группу:</h5>
-          Group ID. {{ this.$store.state.group_id }} <br>Укажите 1 раз убдет сохранена в вашем браузере. но пока сохранение не рабтает <br>
-          <input v-model="localGroupId" type="text"><br>
+          Group ID. {{ this.$store.state.group_id }} <br>
+          <!-- Укажите 1 раз убдет сохранена в вашем браузере. но пока сохранение не рабтает <br>
+          <input v-model="localGroupId" type="text"><br> -->
         </div>
       </div>
     </div>

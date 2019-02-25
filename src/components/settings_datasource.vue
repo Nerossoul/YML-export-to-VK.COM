@@ -3,7 +3,7 @@
   <div class="card">
     <div class="card-body">
       <h5 class="card-title">Текущий источник данных</h5>
-      <p class="card-text">{{ymlSourceLink}}</p>
+      <p class="card-text">{{ymlSource}}</p>
       <div v-if="isGettingDataNow">{{gettingDataText}}<br>
         <div class="spinner-border" role="status">
           <span class="sr-only">Loading...</span>
@@ -19,6 +19,7 @@
       <h5 class="card-title">Текущие данные от {{ sourceDate }}:</h5>
       <p class="card-text">Категории: {{ categories.length }}</p>
       <p class="card-text">Товары: {{ products.length }}</p>
+      <p class="card-text">Фотографий в базе: {{ photoBaseObj.length }}</p>
     </div>
   </div>
 </div>
@@ -31,8 +32,10 @@ export default {
   data () {
     return {
       // TODO: ymlSourceLink must be user setable and saved to localstorege
-      ymlSourceLink: 'https://playavto.ru/export/yandex_yml.xml',
+      ymlSource: 'https://playavto.ru/export/yandex_yml.xml',
+      photoBaseSource: 'https://playavto.ru/vk_export/server/photobase.json',
       xmlObj: {},
+      photoBaseObj: {},
       isGettingDataNow: false,
       gettingDataText: 'Получаем данные...',
       x2js: ' ',
@@ -67,11 +70,12 @@ export default {
   methods: {
     getData () {
       this.isGettingDataNow = true
-      this.file_get_contents()
+      this.getXmlData()
+      this.getPhotoBase()
     },
-    file_get_contents () {
+    getXmlData () {
       var context = this
-      fetch(this.ymlSourceLink)
+      fetch(this.ymlSource)
         .then((resp) => {
           return resp.text()
         })
@@ -80,6 +84,34 @@ export default {
         })
         .then(function () {
           context.isGettingDataNow = false
+        })
+    },
+    getPhotoBase () {
+      let fetchOptions = {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache'
+      };
+      fetch(this.photoBaseSource, fetchOptions)
+        .then((resp) => {
+          return resp.json()
+        })
+        .then(json => {
+          if (typeof json == 'object') {
+            return json
+          } else {
+            return JSON.parse(json)
+          }
+        })
+        .then(obj => {
+          let photoCounter = 0 
+          for (let key in obj) {
+            ++photoCounter
+          }
+          obj.length = photoCounter
+          this.$store.state.photoBase = obj
+          this.photoBaseObj = obj
+          this.isGettingDataNow = false
         })
     }
   },

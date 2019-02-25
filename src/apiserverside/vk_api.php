@@ -74,3 +74,24 @@ function vkApi_upload($upload_url, $file_link) {
 
   return $response;
 }
+function updatePotoBase($link, $photoId) {
+  $photoBaseArray = getPhotoBaseData();
+  $photoBaseArray[$link] = $photoId;
+  savePhotoBase($photoBaseArray);
+  return array(
+    'response' => 'Photo base is updated'
+  );
+}
+
+function getPhotoBaseData() {
+  $fileName = 'photobase.json';
+  if (file_exists($fileName)) {
+  $baseJsonString = file_get_contents($fileName);
+  return json_decode($baseJsonString, true);
+  } 
+  return array();
+}
+function savePhotoBase($photoBaseArray) {
+  $fileName = 'photobase.json';
+  file_put_contents($fileName, json_encode($photoBaseArray), LOCK_EX);
+}
