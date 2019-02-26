@@ -1,26 +1,34 @@
 
 <template>
   <div class="card mt-3">
-      <div class="row mt-2">
-        <div class="col-sm">
-          <div class="card">
-            <button type="button" class="btn btn-outline-secondary"  @click="export_AllProductsToVk()">Export all products</button>
-          </div>
+    <div class="row mt-2">
+      <div class="col-sm">
+        <div class="card">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            @click="export_AllProductsToVk()"
+          >Export all products</button>
         </div>
       </div>
-      <div class="row mt-2">
-        <div class="col-sm">
-          <div class="card">
-            <button type="button" class="btn btn-outline-secondary"  @click="get_photo_id('https://playavto.ru/image/import_files/5f/5f8d8fa5-7144-11e3-b176-50e54924171a_bee86070-a85b-11e5-a2a5-50e54924171a.jpeg')">get photo id</button>
-          </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-sm">
+        <div class="card">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            @click="market_search('shtatnaya-kamera-zadnego-vida-haima-m3-ccd')"
+          >search 2510</button>
         </div>
       </div>
-      <br>
-      <h5>{{ current_product.vendorCode }}</h5>
-      {{ current_product.name}}
-      <hr>
-      <h5>Progress text</h5>
-      <p style="white-space: pre-line">{{ action_string }}</p>
+    </div>
+    <br>
+    <h5>{{ current_product.vendorCode }}</h5>
+    {{ current_product.name}}
+    <hr>
+    <h5>Progress text</h5>
+    <p style="white-space: pre-line">{{ action_string }}</p>
   </div>
 </template>
 
@@ -44,16 +52,16 @@ export default {
   },
   methods: {
 
-    market_get () {
+    market_get (count, offset) {
       let methodString = 'market.get'
       let params = {
         owner_id: '-'+this.$store.state.group_id,
         album_id: 0,
-        count: 2,
-        offset: 0,
+        count: count,
+        offset: offset,
         extended: 0        
       }
-      this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString,params)
     },
 
     market_getAlbums () {
@@ -61,7 +69,7 @@ export default {
       let params = {
         owner_id: '-'+this.$store.state.group_id,
       }
-      this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString,params)
     },
 
     photos_getMarketUploadServer() { 
@@ -112,7 +120,8 @@ export default {
       let params = {
         'owner_id' : '-' + this.$store.state.group_id, //идентификатор сообщества, которому принадлежат товары. целое число, обязательный параметр
         'album_id' : 0, //идентификатор подборки, товары из которой нужно вернуть. положительное число, по умолчанию 0
-        'q' : '#' +  model_id, //строка поискового запроса. Например, зеленые тапочки. строка
+        'q' : model_id, //строка поискового запроса. Например, зеленые тапочки. строка
+        // 'q' : '#' +  model_id, //строка поискового запроса. Например, зеленые тапочки. строка
         'price_from' : 0, //минимальное значение цены товаров в сотых долях единицы валюты. Например, 100000. положительное число
         'price_to' : 1000000000, //максимальное значение цены товаров в сотых долях единицы валюты. Например, 1410000. положительное число
         'sort' : 3,//вид сортировки. 0 — пользовательская расстановка, 1 — по дате добавления товара, 2 — по цене, 3 — по популярности. целое число, по умолчанию 0
@@ -138,6 +147,14 @@ export default {
       }
       return this._onwApi_call(methodString,params)
     },
+    market_delete (product_id) {
+      let methodString = 'market.delete'
+      let params = {
+        'owner_id'      : '-' + this.$store.state.group_id,
+		    'item_id' : product_id 
+      }
+      return this._onwApi_call(methodString,params)
+    },
 
     market_add(name,description,price,main_photo_id,photo_ids) {
       let methodString = 'market.add'
@@ -155,6 +172,7 @@ export default {
     },
     
     market_addToAlbum(market_item_id, album_id) {
+
       let methodString = 'market.addToAlbum'
       let params = {
         'owner_id' : '-' + this.$store.state.group_id,
@@ -164,10 +182,36 @@ export default {
       return this._onwApi_call(methodString,params)
     },
 
-    isProductInMarket(model_id) {
-      console.log('-Is ' + model_id + ' in market?')
+    get_all_product_ids () {
       return new Promise(async (resolve, reject) => {
-        let searchResult = await this.market_search(model_id) 
+        let counter = Array.from(Array(75).keys());
+        let count = 200
+        let offset = 0
+        let all_product_ids = []
+        for (let i in counter) {
+          let market_products = await this.market_get (count, offset)
+          // console.log(market_products.response.items.length)
+          // console.log(market_products.response.items)
+          await this.pause(this.sleeping_period)
+          for (let product in market_products.response.items) {
+            all_product_ids.push(market_products.response.items[product].id)
+          }
+          offset += market_products.response.items.length
+          if (market_products.response.items.length< 200) {
+            break
+          } 
+        }
+        resolve(all_product_ids)
+      })
+      .then(result=>{
+        return result
+      })
+    },
+
+    isProductInMarket(search_string) {
+      // console.log('-Is ' + search_string + ' in market?')
+      return new Promise(async (resolve, reject) => {
+        let searchResult = await this.market_search(search_string) 
         resolve(searchResult)
       })
       .then(x => new Promise(resolve => setTimeout(() => {
@@ -175,12 +219,26 @@ export default {
         resolve(x)
       }, this.sleeping_period)))
       .then(searchResult=>{
-        if (searchResult.response.count > 0) {
-          console.log('-YES! The ' + model_id + ' is in market')
+        if (searchResult.error) {
+          console.error('Search in market ERROR')
+          console.error(searchResult)
+        }
+        if (searchResult.response.count == 1) {
+          console.log('Is ' + search_string + ' in market? - YES')
           this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
           return searchResult.response.items[0].id
+        } else if (searchResult.response.count > 1) {
+          // console.log('PRODUCTS DUPLACATED!!!! COUNT: ' + searchResult.response.count + ' of ' + search_string)
+          for (let item_index in searchResult.response.items) {
+            console.log(searchResult.response.items[item_index].description.indexOf(search_string))
+            if (searchResult.response.items[item_index].description.indexOf(search_string) != -1) {
+              console.error('we take ' + item_index)
+              return searchResult.response.items[item_index].id
+            }
+          }
+          return false
         } else {
-          console.log('-NO! The ' + model_id + ' isn\'t in market')
+          console.log('Is ' + search_string + ' in market? - NO')
           this.logCurrentAction('Нет в группе. Запуск процесса добавления' + this.action_string_separator)
           return false
         }
@@ -195,7 +253,13 @@ export default {
         for (let product of products) {
           this.current_product = product
           console.log(productCounter, product.vendorCode);
-          let market_item_id = await this.isProductInMarket(product.vendorCode)
+          //search products in market by product alias
+          let url_parts = product.url.split('/')
+          let search_string = url_parts[url_parts.length-1]
+          if (search_string == '') {
+            search_string = url_parts[url_parts.length-2]
+          }
+          let market_item_id = await this.isProductInMarket(search_string)
           let productPrepariedData = await this.prepare_ProductData(productCounter)
           console.log('Product data preparied. See below')
           console.log(productPrepariedData)
@@ -216,6 +280,23 @@ export default {
               console.log('Error update')
               this.logCurrentAction('Oшибка: товар не обновлен!' + this.action_string_separator)
             }
+
+            await this.pause(this.sleeping_period)
+            let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
+            console.log('Add this product to album')
+            this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
+            let add_to_album_result = await this.market_addToAlbum(market_item_id, AlbumId)
+            if (add_to_album_result.response == 1) {
+              console.log('Product added to album')
+              this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
+            } else if (add_to_album_result.error.error_code == 1404){
+              console.log('Already added to this album')
+              this.logCurrentAction('Товар уже добавлен в эту подборку' + this.action_string_separator)
+            } else {
+              console.log('Error add to album')
+              this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
+            }
+
           } else {
             console.log('ADD PRODUCT!')
             this.logCurrentAction('Отправляем запрос на добавление товара' + this.action_string_separator)
@@ -227,7 +308,7 @@ export default {
 
                 console.log('ERROR')
                 console.log('error_code: ' + response.error.error_code)
-                console.log('error_msg: ' + response.error.error_msg)
+                console.error('error_msg: ' + response.error.error_msg)
                 if (response.error.error_msg == 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
                 console.log(response.error.request_params[8].value)
                 console.log(response.error.request_params[9].value)
@@ -248,12 +329,18 @@ export default {
                 response = await this.market_add(name,description,price,main_photo_id,photo_ids)
                 }
               } 
+              if (response.error) {
+
+                // TODO create error handler function
+
+                console.log('ERROR')
+                console.log('error_code: ' + response.error.error_msg)
+              }
               if (response.response.market_item_id) {
                 market_item_ids.push(response.response.market_item_id)
                 console.log('Product added')
                 this.logCurrentAction('Успешно!' + this.action_string_separator)
                 await this.pause(this.sleeping_period)
-                // TODO market addToAlbum is here
                 let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
                 let market_item_id = response.response.market_item_id
                 console.log('Add this product to album')
@@ -281,15 +368,39 @@ export default {
           this.logCurrentAction() // очистить лог.
           ++productCounter
           document.title = 'VK EXPORT:( '+ productCounter +'/' +this.$store.state.products.length + ' )'
-          if (productCounter >10){
-            break
-          } 
+          // if (productCounter >10){
+            //  break
+          // } 
         }
         resolve(market_item_ids)
       })
-      .then(market_item_ids=> {
+      .then(async (market_item_ids)=> {
         console.log(market_item_ids)
+        let all_product_ids = await this.get_all_product_ids()
+        console.log(all_product_ids)
+        let product_ids_for_delete = await this.get_bad_products_ids2(all_product_ids, market_item_ids)
+        await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
+        for (let product in product_ids_for_delete) {
+          await this.logCurrentAction()
+          let product_delete_result = await this.market_delete(product_ids_for_delete[product])
+          await this.pause(this.sleeping_period)
+          if (product_delete_result.error) {
+            await this.logCurrentAction(product_ids_for_delete[product] + ' Ошибка удаления' + this.action_string_separator)
+            console.error(product_delete_result)
+          } else {
+            await this.logCurrentAction(product_ids_for_delete[product] + ' Удален ' + this.action_string_separator)
+            console.log(product_ids_for_delete[product] + 'IS DELETED')
+          }
+        }
+        console.log('ВЫГРУЗКА ЗАКОНЧЕНА')
+        this.logCurrentAction('РАБОТА ВЫПОЛНЕНА')
       })
+    },
+
+    get_bad_products_ids2(all_product_ids, market_item_ids) {
+      let difference = all_product_ids.filter(x => !market_item_ids.includes(x));
+      console.log(difference)
+      return difference
     },
 
     get_photo_id(file_link) {
@@ -331,8 +442,8 @@ export default {
             console.log('break')
             break
           }
-          console.log('main_photo_id: ' + main_photo_id)
-          console.log('photo_ids: ' + photo_ids)
+          // console.log('main_photo_id: ' + main_photo_id)
+          // console.log('photo_ids: ' + photo_ids)
           }
           resolve([main_photo_id,photo_ids])
         } else {
@@ -490,5 +601,4 @@ export default {
 </script>
 
 <style scoped>
-
 </style>
