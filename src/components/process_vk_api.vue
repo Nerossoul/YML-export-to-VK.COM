@@ -224,15 +224,17 @@ export default {
           console.error(searchResult)
         }
         if (searchResult.response.count == 1) {
-          console.log('Is ' + search_string + ' in market? - YES')
-          this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
-          return searchResult.response.items[0].id
+          if (searchResult.response.items[0].description.indexOf(search_string) != -1) {
+              console.log('Is ' + search_string + ' in market? - YES')
+              this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
+              return searchResult.response.items[0].id
+            }
+          return false
         } else if (searchResult.response.count > 1) {
-          // console.log('PRODUCTS DUPLACATED!!!! COUNT: ' + searchResult.response.count + ' of ' + search_string)
           for (let item_index in searchResult.response.items) {
             console.log(searchResult.response.items[item_index].description.indexOf(search_string))
             if (searchResult.response.items[item_index].description.indexOf(search_string) != -1) {
-              console.error('we take ' + item_index)
+              this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
               return searchResult.response.items[item_index].id
             }
           }
@@ -277,8 +279,34 @@ export default {
               console.log('Product updated')
               this.logCurrentAction('Успешно!' + this.action_string_separator)
             } else {
-              console.log('Error update')
-              this.logCurrentAction('Oшибка: товар не обновлен!' + this.action_string_separator)
+             
+                console.log('ERROR')
+                console.log('error_code: ' + response.error.error_code)
+                console.error('error_msg: ' + response.error.error_msg)
+                if (response.error.error_msg == 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
+                console.log(response.error.request_params[8].value)
+                console.log(response.error.request_params[9].value)
+                console.log('you must to delete photos from base. Start fixin this mistake')
+                let bad_id1 = response.error.request_params[9].value
+                let bad_id2 = response.error.request_params[10].value
+
+                this.$store.state.badPhotoIds = ((bad_id1+','+bad_id2).split(','))
+                console.log(this.$store.state.badPhotoIds)
+                productPrepariedData = await this.prepare_ProductData(productCounter)
+                console.log('Product data preparied. See below')
+                console.log(productPrepariedData)
+                let name = productPrepariedData.name
+                let description = productPrepariedData.description
+                let price = productPrepariedData.price
+                let main_photo_id = productPrepariedData.main_photo_id
+                let photo_ids = productPrepariedData.photo_ids
+                response = await this.market_edit(market_item_id,name,description,price,main_photo_id,photo_ids)
+                } 
+                if (response.error) { 
+                console.error(`
+                ПОВТОРНАЯ ОШИБКА
+                error_msg: ` + response.error.error_msg)
+                }
             }
 
             await this.pause(this.sleeping_period)
@@ -354,7 +382,7 @@ export default {
                   this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
                 }
               } else {
-                console.log('Error: Product is not added')
+                console.error('Error: Product is not added')
                 this.logCurrentAction('Oшибка: товар не добавлен!' + this.action_string_separator)
               }
             } catch(error) {
