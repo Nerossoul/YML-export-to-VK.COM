@@ -3,8 +3,8 @@
   <div class="card">
     <div class="card-body">
       <h5 class="card-title">Текущий источник данных</h5>
-      <p class="card-text">{{ymlSource}}</p>
-      <div v-if="isGettingDataNow">{{gettingDataText}}<br>
+      <p class="card-text">{{ ymlSource }}</p>
+      <div v-if="isGettingDataNow && isGettingPhotoBaseNow">{{gettingDataText}}<br>
         <div class="spinner-border" role="status">
           <span class="sr-only">Loading...</span>
         </div>
@@ -38,10 +38,10 @@ export default {
       ymlSource: 'https://playavto.ru/export/yandex_yml.xml',
       photoBaseSource: 'https://playavto.ru/vk_export/server/photobase.json',
       xmlObj: {},
-      photoBaseObj: {},
       isGettingDataNow: false,
+      isGettingPhotoBaseNow : false,
       gettingDataText: 'Получаем данные...',
-      x2js: ' ',
+      x2js: '',
     }
   },
   watch: {
@@ -61,7 +61,10 @@ export default {
     },
     sourceDate() {
       return this.$store.state.sourceDate
-    }, 
+    },
+    photoBaseObj() {
+      return this.$store.state.photoBase
+    },
     isData () {
       if (this.$store.state.categories.length > 0 && 
           this.$store.state.products.length > 0) {
@@ -72,9 +75,10 @@ export default {
   },
   methods: {
     getData () {
-      this.isGettingDataNow = true
       this.getXmlData()
+      this.isGettingDataNow = true
       this.getPhotoBase()
+      this.isGettingPhotoBaseNow = true
     },
     getXmlData () {
       var context = this
@@ -113,8 +117,7 @@ export default {
           }
           obj.length = photoCounter
           this.$store.state.photoBase = obj
-          this.photoBaseObj = obj
-          this.isGettingDataNow = false
+          this.isGettingPhotoBaseNow = false
         })
     }
   },
