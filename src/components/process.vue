@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="mt-3">
     <h2>{{ msg }}</h2>
     <div class="alert alert-primary" role="alert" v-if="!active_link.activeLink">
       {{ active_link.message }} <router-link to='/settings'>НАСТРОИТЬ </router-link>

@@ -2,24 +2,13 @@
 <template>
   <div class="card mt-3">
     <div class="row mt-2">
-      <div class="col-sm">
+      <div class="col-sm m-3">
         <div class="card">
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="btn btn-dark"
             @click="export_AllProductsToVk()"
           >Export all products</button>
-        </div>
-      </div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-sm">
-        <div class="card">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            @click="market_search('shtatnaya-kamera-zadnego-vida-haima-m3-ccd')"
-          >search 2510</button>
         </div>
       </div>
     </div>
@@ -27,7 +16,7 @@
     <h5>{{ current_product.vendorCode }}</h5>
     {{ current_product.name}}
     <hr>
-    <h5>Progress text</h5>
+    <h5 class="pl-3">Progress text</h5>
     <p style="white-space: pre-line">{{ action_string }}</p>
   </div>
 </template>

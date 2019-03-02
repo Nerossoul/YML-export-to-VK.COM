@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mt-3">
     <h2>{{ msg }}</h2>
     <div class="row">
        <div class="col-sm">

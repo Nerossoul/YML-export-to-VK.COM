@@ -20,6 +20,9 @@
       <p class="card-text">Категории: {{ categories.length }}</p>
       <p class="card-text">Товары: {{ products.length }}</p>
       <p class="card-text">Фотографий в базе: {{ photoBaseObj.length }}</p>
+<router-link tag="button" type="button" class="btn btn-dark" to="/process" >
+        Go to Process room
+      </router-link>
     </div>
   </div>
 </div>
@@ -122,6 +125,6 @@ export default {
 }
 </script>
 
-<style scoped>
+<style >
 
 </style>
