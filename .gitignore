@@ -5,9 +5,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /test/unit/coverage/
-static/post.php
-static/api/config.php
-static/api/.htaccess
+/static/api/config.php
+/static/api/.htaccess
 
 # Editor directories and files
 .idea
