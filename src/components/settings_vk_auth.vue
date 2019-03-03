@@ -4,6 +4,7 @@
     <div class="card-body">
       <h5 class="card-title">Авторизация в контакте:</h5>
       <div v-if="this.$store.state.access_token == 'no_token'">
+        {{ current_address }}
         Вы не авторизованы!!!<br>
         <a type="button" :href="user_auth_link_to_get_code" name="button" class="btn btn-dark">Авторизоваться</a><br>
       </div>
@@ -29,8 +30,21 @@ export default {
   data () {
     return {
       localGroupId: '',
-      redirectUrl: 'https://playavto.ru/vk_export/server/vk_auth.php',
-      user_auth_link_to_get_code: 'https://oauth.vk.com/authorize?client_id=6860578&display=popup&redirect_uri=https://playavto.ru/vk_export/server/vk_auth.php&response_type=code&scope=134479876&v=5.92'
+      // redirectUrl: 'https://playavto.ru/vk_export/static/api/vk_auth.php',
+      // user_auth_link_to_get_code: 'https://oauth.vk.com/authorize?client_id=6860578&display=popup&redirect_uri=https://playavto.ru/vk_export/server/vk_auth.php&response_type=code&scope=134479876&v=5.92',
+      user_auth_link: 'https://oauth.vk.com/authorize',
+      client_id: '6860578',
+      display: 'popup',
+      redirect_uri: window.location.origin + window.location.pathname + 'static/api/vk_auth.php',
+      
+      response_type: 'code',
+      scope: 134479876,
+      v: 5.92,
+    }
+  },
+  computed: {
+    user_auth_link_to_get_code() {
+      return this.user_auth_link + '?client_id=' + this.client_id + '&display=' +this.display + '&redirect_uri=' + this.redirect_uri + '&response_type=' + this.response_type + '&scope=' + this.scope + '&v=' + this.v
     }
   },
   watch: {

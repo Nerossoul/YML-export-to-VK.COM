@@ -1,7 +1,7 @@
 
 <template>
   <div class="card mt-3">
-    <div class="row mt-2">
+    <div class="row mt-2" v-if="show_export_button">
       <div class="col-sm m-3">
         <div class="card">
           <button
@@ -12,12 +12,17 @@
         </div>
       </div>
     </div>
-    <br>
-    <h5>{{ current_product.vendorCode }}</h5>
-    {{ current_product.name}}
-    <hr>
-    <h5 class="pl-3">Progress text</h5>
-    <p style="white-space: pre-line">{{ action_string }}</p>
+    <div class="row mt-2" v-else>
+      <div class="col-sm m-3">
+        <div class="card">
+          <h5 class="mt-3 pl-3">{{ current_product.vendorCode }}</h5>
+          <span class="pl-3">{{ current_product.name }}</span>
+          <hr>
+          <h5 class="pl-3">Progress text</h5>
+          <p class="pl-3" style="white-space: pre-line">{{ action_string }}</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -28,10 +33,11 @@ export default {
     name: 'vkApi',
   data () {
     return {
-      ownApiServer: 'https://playavto.ru/vk_export/server/',
+      show_export_button: true,
+      ownApiServer: window.location.origin + window.location.pathname + 'static/api/',
       response_text: '',
       sleeping_period: 400,
-      sleeping_period_text: ' ⏸️️ Pause end. (ms)-',
+      sleeping_period_text: '⏸️️ Pause end. (ms)-',
       prepared_product_data: {},
       current_product: {},
       action_string: '',
@@ -237,6 +243,7 @@ export default {
 
     },
     export_AllProductsToVk() {
+      this.show_export_button = false
       let products = this.$store.state.products
       let productCounter = 0
       let market_item_ids = []

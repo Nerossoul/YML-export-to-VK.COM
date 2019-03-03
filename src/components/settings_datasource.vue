@@ -36,7 +36,7 @@ export default {
     return {
       // TODO: ymlSourceLink must be user setable and saved to localstorege
       ymlSource: 'https://playavto.ru/export/yandex_yml.xml',
-      photoBaseSource: 'https://playavto.ru/vk_export/server/photobase.json',
+      photoBaseSource: 'https://playavto.ru/vk_export/static/api/photobase.json',
       xmlObj: {},
       isGettingDataNow: false,
       isGettingPhotoBaseNow : false,
@@ -100,10 +100,18 @@ export default {
         cache: 'no-cache'
       };
       fetch(this.photoBaseSource, fetchOptions)
-        .then((resp) => {
-          return resp.json()
-        })
+        .then(
+          (response) => {
+            console.log (response)
+            if (!response.ok) {
+              console.log('HTTP error, status = ' + response.status);
+              return '{}'
+            }
+            console.log('Good response')
+            return resp.json()
+          })
         .then(json => {
+          console.log(json)
           if (typeof json == 'object') {
             return json
           } else {

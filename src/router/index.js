@@ -23,6 +23,6 @@ export default new Router({
       name: 'Process',
       component: Process
     }
-  ],
-  mode: 'history'
+  ]
+  // mode: 'history'
 })

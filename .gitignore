@@ -6,7 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 /test/unit/coverage/
 static/post.php
-src/apiserverside/config.php
+static/api/config.php
+static/api/.htaccess
 
 # Editor directories and files
 .idea
