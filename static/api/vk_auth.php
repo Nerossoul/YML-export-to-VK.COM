@@ -13,11 +13,11 @@ if (isset($_GET[code])) {
   $get_params = http_build_query($request_params);
   $result = json_decode(file_get_contents('https://oauth.vk.com/access_token?' . $get_params));
   if (isset($result -> access_token)) {      
-     $new_url = CLIENT_URI . "?access_token=" . $result -> access_token;
-      header('Location: '.$new_url);
+    $new_url = CLIENT_URI . "?access_token=" . $result -> access_token;
+    header('Location: ' . $new_url);
   } else {    
     echo '<br> Something goes wrong. Press BACK button and try again<br>';
-    print_r($result);
+    
   }
             
 } else { 

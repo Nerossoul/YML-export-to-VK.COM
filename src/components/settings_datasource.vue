@@ -102,16 +102,16 @@ export default {
       fetch(this.photoBaseSource, fetchOptions)
         .then(
           (response) => {
-            console.log (response)
+            // console.log (response)
             if (!response.ok) {
               console.log('HTTP error, status = ' + response.status);
               return '{}'
             }
-            console.log('Good response')
-            return resp.json()
+            // console.log('Good response')
+            return response.json()
           })
         .then(json => {
-          console.log(json)
+          // console.log(json)
           if (typeof json == 'object') {
             return json
           } else {

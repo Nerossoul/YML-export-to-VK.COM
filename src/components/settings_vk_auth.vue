@@ -33,7 +33,7 @@ export default {
       // redirectUrl: 'https://playavto.ru/vk_export/static/api/vk_auth.php',
       // user_auth_link_to_get_code: 'https://oauth.vk.com/authorize?client_id=6860578&display=popup&redirect_uri=https://playavto.ru/vk_export/server/vk_auth.php&response_type=code&scope=134479876&v=5.92',
       user_auth_link: 'https://oauth.vk.com/authorize',
-      client_id: '6860578',
+      client_id: '6897290',
       display: 'popup',
       redirect_uri: window.location.origin + window.location.pathname + 'static/api/vk_auth.php',
       

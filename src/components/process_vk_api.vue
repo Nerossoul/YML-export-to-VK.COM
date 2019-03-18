@@ -598,6 +598,7 @@ export default {
         console.log(error)
         console.log('ERROR API CALL: RETRY')
         this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.' + this.action_string_separator)
+        await this.pause(15000)
         let response = await this._onwApi_call (method, params)
         return response
       })
@@ -612,11 +613,11 @@ export default {
 
     pause(pausePeriod) {
       return new Promise(async (resolve, reject) => {
-        // console.log('Pause ' + pausePeriod + ' ms began')
+        console.log('Pause ' + pausePeriod + ' ms began')
         setTimeout(()=>resolve('Pause end'), pausePeriod)
       })
       .then(pauseEndMessage=>{
-        // console.log(pauseEndMessage)
+        console.log(pauseEndMessage)
         return pauseEndMessage
       })
     },
