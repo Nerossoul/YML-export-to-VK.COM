@@ -34,19 +34,26 @@ export default {
   data () {
     return {
       show_export_button: true,
-      ownApiServer: iprocess.env.OWN_API_SERVER,
+      ownApiServer: process.env.OWN_API_SERVER,
       response_text: '',
       sleeping_period: 400,
       sleeping_period_text: '⏸️️ Pause end. (ms)-',
       prepared_product_data: {},
       current_product: {},
+      current_product_number: 0,
+      progress_bar_per_cent: 0,
       action_string: '',
       action_string_separator: `
       `
     }
   },
+  computed: {
+    progress_bar() {
+      let progress_bar_string = this.get_prog_bar_string('⣀⣄⣤⣦⣶⣷⣿', this.progress_bar_per_cent, 10, '')
+      return progress_bar_string
+    }
+  },
   methods: {
-
     market_get (count, offset) {
       let methodString = 'market.get'
       let params = {
@@ -249,6 +256,7 @@ export default {
       let market_item_ids = []
       return new Promise(async (resolve, reject) => {
         for (let product of products) {
+          this.change_title(0)
           this.current_product = product
           console.log(productCounter, product.vendorCode);
           //search products in market by product alias
@@ -258,7 +266,9 @@ export default {
             search_string = url_parts[url_parts.length-2]
           }
           let market_item_id = await this.isProductInMarket(search_string)
+          this.change_title(8)
           let productPrepariedData = await this.prepare_ProductData(productCounter)
+          this.change_title(64)
           console.log('Product data preparied. See below')
           console.log(productPrepariedData)
           let name = productPrepariedData.name
@@ -288,6 +298,7 @@ export default {
 
                 this.$store.state.badPhotoIds = ((bad_id1+','+bad_id2).split(','))
                 console.log(this.$store.state.badPhotoIds)
+                this.change_title(8)
                 productPrepariedData = await this.prepare_ProductData(productCounter)
                 console.log('Product data preparied. See below')
                 console.log(productPrepariedData)
@@ -304,7 +315,7 @@ export default {
                 error_msg: ` + response.error.error_msg)
                 }
             }
-
+            this.change_title(85)
             await this.pause(this.sleeping_period)
             let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
             console.log('Add this product to album')
@@ -320,11 +331,12 @@ export default {
               console.log('Error add to album')
               this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
             }
-
+            this.change_title(100)
           } else {
             console.log('ADD PRODUCT!')
             this.logCurrentAction('Отправляем запрос на добавление товара' + this.action_string_separator)
             let response = await this.market_add(name,description,price,main_photo_id,photo_ids)
+            this.change_title(80)
             try {
               if (response.error) {
 
@@ -388,13 +400,11 @@ export default {
             }
             
           }
+          this.change_title(100)
           await this.pause(this.sleeping_period)
           this.logCurrentAction() // очистить лог.
           ++productCounter
-          document.title = 'VK EXPORT:( '+ productCounter +'/' +this.$store.state.products.length + ' )'
-          // if (productCounter >10){
-            //  break
-          // } 
+          this.current_product_number = productCounter
         }
         resolve(market_item_ids)
       })
@@ -456,6 +466,8 @@ export default {
         let separator = ''
         if (Array.isArray(productPhotoUrls)) {
           for (let item of productPhotoUrls) {
+          this.progress_bar_per_cent += 11
+          this.change_title(this.progress_bar_per_cent)
           ++photoCounter
           if (photoCounter == 1) {
             main_photo_id = await this.get_photo_id(item)
@@ -621,6 +633,35 @@ export default {
         return pauseEndMessage
       })
     },
+    get_prog_bar_string(bar_string, per_cent, bars, sep = ' ') {
+      if (per_cent > 100) {
+        per_cent = 100
+      }
+      let result_bar_string = ''
+      let bar_weight = 100 / bars
+      let full_bars = Math.floor(per_cent / bar_weight)
+      let bar_part = (per_cent / bar_weight) - Math.floor(per_cent / bar_weight)
+      let part_max = Math.round(1/((1 / bar_weight) - Math.floor(1 / bar_weight)))
+
+      for (let i = 1; i<= full_bars; i++) {
+        result_bar_string += bar_string[bar_string.length - 1] + sep
+      }
+      if (bar_part != 0) {
+        let current_parts = bar_part / (1 / part_max)
+        let part_char_index = Math.round(((bar_string.length-1) / part_max * current_parts )) 
+        result_bar_string += bar_string[part_char_index] + sep
+
+        full_bars +=1
+      }
+      for (let i = full_bars; i< bars; i++) {
+        result_bar_string += bar_string[0] + sep
+      }
+      return  result_bar_string
+    },
+    change_title(per_cent) {
+      this.progress_bar_per_cent = per_cent
+      document.title = this.progress_bar + '( '+ this.current_product_number +'/' +this.$store.state.products.length + ' )'
+    }
   }
 }
 </script>
