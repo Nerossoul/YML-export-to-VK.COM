@@ -34,7 +34,7 @@ export default {
   data () {
     return {
       show_export_button: true,
-      ownApiServer: window.location.origin + window.location.pathname + 'static/api/',
+      ownApiServer: iprocess.env.OWN_API_SERVER,
       response_text: '',
       sleeping_period: 400,
       sleeping_period_text: '⏸️️ Pause end. (ms)-',
