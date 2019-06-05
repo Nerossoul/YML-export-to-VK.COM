@@ -252,10 +252,16 @@ export default {
     export_AllProductsToVk() {
       this.show_export_button = false
       let products = this.$store.state.products
-      let productCounter = 0
+      let productCounter = -1
       let market_item_ids = []
       return new Promise(async (resolve, reject) => {
         for (let product of products) {
+          ++productCounter
+          this.current_product_number = productCounter+1
+
+          // TODO delet next IF before production
+          // if (productCounter<733) continue; 
+
           this.change_title(0)
           this.current_product = product
           console.log(productCounter, product.vendorCode);
@@ -271,6 +277,9 @@ export default {
           this.change_title(64)
           console.log('Product data preparied. See below')
           console.log(productPrepariedData)
+          if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                continue;
+          }
           let name = productPrepariedData.name
           let description = productPrepariedData.description
           let price = productPrepariedData.price
@@ -302,6 +311,9 @@ export default {
                 productPrepariedData = await this.prepare_ProductData(productCounter)
                 console.log('Product data preparied. See below')
                 console.log(productPrepariedData)
+                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                    continue;
+                }
                 let name = productPrepariedData.name
                 let description = productPrepariedData.description
                 let price = productPrepariedData.price
@@ -357,6 +369,9 @@ export default {
                 productPrepariedData = await this.prepare_ProductData(productCounter)
                 console.log('Product data preparied. See below')
                 console.log(productPrepariedData)
+                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                  continue;
+                }
                 let name = productPrepariedData.name
                 let description = productPrepariedData.description
                 let price = productPrepariedData.price
@@ -403,8 +418,6 @@ export default {
           this.change_title(100)
           await this.pause(this.sleeping_period)
           this.logCurrentAction() // очистить лог.
-          ++productCounter
-          this.current_product_number = productCounter
         }
         resolve(market_item_ids)
       })
@@ -459,7 +472,18 @@ export default {
     prepare_ProductData(array_index) {
       return new Promise(async (resolve, reject) => {
         this.logCurrentAction('Формируем запрос' + this.action_string_separator)
+
+        // TODO reject if product photo is empty
         let productPhotoUrls = this.$store.state.products[array_index].picture
+        
+        
+        if (productPhotoUrls === undefined) {
+        console.error('---------------')
+        console.error(productPhotoUrls)
+        console.error('This product don\'t have photos, SKIP...')
+        console.error('---------------')
+          resolve(['',''])
+          }
         let photoCounter = 0
         let main_photo_id = ''
         let photo_ids = ''
@@ -524,7 +548,6 @@ export default {
       this.logCurrentAction('Loading photo: ')
       return new Promise(async (resolve, reject) => {
         console.log('Getting Upload Server')
-        // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer()
         this.logCurrentAction('✓')
         resolve(response)
