@@ -17,7 +17,7 @@
         <div class="card">
           <h5 class="mt-3 pl-3">{{ current_product.vendorCode }}</h5>
           <span class="pl-3">{{ current_product.name }}</span>
-          <hr>
+          <hr />
           <h5 class="pl-3">Progress text</h5>
           <p class="pl-3" style="white-space: pre-line">{{ action_string }}</p>
         </div>
@@ -256,6 +256,12 @@ export default {
       let market_item_ids = []
       return new Promise(async (resolve, reject) => {
         for (let product of products) {
+          ++productCounter
+          this.current_product_number = productCounter+1
+
+          // TODO delet next IF before production
+          // if (productCounter<880) continue; 
+
           this.change_title(0)
           this.current_product = product
           console.log(productCounter, product.vendorCode);
@@ -271,6 +277,9 @@ export default {
           this.change_title(64)
           console.log('Product data preparied. See below')
           console.log(productPrepariedData)
+          if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                continue;
+          }
           let name = productPrepariedData.name
           let description = productPrepariedData.description
           let price = productPrepariedData.price
@@ -302,6 +311,9 @@ export default {
                 productPrepariedData = await this.prepare_ProductData(productCounter)
                 console.log('Product data preparied. See below')
                 console.log(productPrepariedData)
+                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                    continue;
+                }
                 let name = productPrepariedData.name
                 let description = productPrepariedData.description
                 let price = productPrepariedData.price
@@ -354,9 +366,13 @@ export default {
 
                 this.$store.state.badPhotoIds = ((bad_id1+','+bad_id2).split(','))
                 console.log(this.$store.state.badPhotoIds)
+                this.change_title(8)
                 productPrepariedData = await this.prepare_ProductData(productCounter)
                 console.log('Product data preparied. See below')
                 console.log(productPrepariedData)
+                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
+                    continue;
+                }
                 let name = productPrepariedData.name
                 let description = productPrepariedData.description
                 let price = productPrepariedData.price
@@ -403,8 +419,7 @@ export default {
           this.change_title(100)
           await this.pause(this.sleeping_period)
           this.logCurrentAction() // очистить лог.
-          ++productCounter
-          this.current_product_number = productCounter
+         
         }
         resolve(market_item_ids)
       })
@@ -460,6 +475,15 @@ export default {
       return new Promise(async (resolve, reject) => {
         this.logCurrentAction('Формируем запрос' + this.action_string_separator)
         let productPhotoUrls = this.$store.state.products[array_index].picture
+
+        
+        if (productPhotoUrls === undefined) {
+        console.error('---------------')
+        console.error(productPhotoUrls)
+        console.error('This product don\'t have photos, SKIP...')
+        console.error('---------------')
+          resolve(['',''])
+          }
         let photoCounter = 0
         let main_photo_id = ''
         let photo_ids = ''
@@ -608,13 +632,24 @@ export default {
       .catch(async (error)=>{
         console.log('^^^^^^^^^^^^^^^')
         console.log(error)
+        console.log('^^^^^^^метод^^^^^^')
+        console.log(method)
+        console.log('^^^^^параметры^^^^^^')
+        console.log(params)
         console.log('ERROR API CALL: RETRY')
+        if (method === 'upload_file') {
+          if (!params.file_link) {
+            console.error('BROKEN UPLOAD FILE; EXIT');
+            return error;
+          }
+        }
         this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.' + this.action_string_separator)
         await this.pause(15000)
+
         let response = await this._onwApi_call (method, params)
         return response
       })
-    },
+    }, 
 
     logCurrentAction(action_string) {
       this.action_string += action_string
