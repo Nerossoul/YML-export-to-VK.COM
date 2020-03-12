@@ -74,9 +74,9 @@ function vkApi_upload($upload_url, $file_link) {
 
   return $response;
 }
-function updatePotoBase($link, $photoId) {
+function updatePhotoBase($link, $photoId, $productVendorCode) {
   $photoBaseArray = getPhotoBaseData();
-  $photoBaseArray[$link] = $photoId;
+  $photoBaseArray[$productVendorCode][$link] = $photoId;
   savePhotoBase($photoBaseArray);
   return array(
     'response' => 'Photo base is updated'
@@ -88,7 +88,7 @@ function getPhotoBaseData() {
   if (file_exists($fileName)) {
   $baseJsonString = file_get_contents($fileName);
   return json_decode($baseJsonString, true);
-  } 
+  }
   return array();
 }
 function savePhotoBase($photoBaseArray) {

@@ -1,4 +1,3 @@
-
 <template>
   <div class="card mt-3">
     <div class="row mt-2" v-if="show_export_button">
@@ -8,7 +7,8 @@
             type="button"
             class="btn btn-dark"
             @click="export_AllProductsToVk()"
-          >Export all products</button>
+          >Export all products
+          </button>
         </div>
       </div>
     </div>
@@ -17,7 +17,13 @@
         <div class="card">
           <h5 class="mt-3 pl-3">{{ current_product.vendorCode }}</h5>
           <span class="pl-3">{{ current_product.name }}</span>
-          <hr />
+          <div v-if="isCaptchaNecessary">
+            <h4>Требуется ввести каптчу</h4>
+            <img :src="captchaImg" alt="" border="1">
+            <input type="text" placeholder="Введите текст с картинки" v-model="captchaUserInputKey">
+            <button @click="sendCaptcha()">Go</button>
+          </div>
+          <hr/>
           <h5 class="pl-3">Progress text</h5>
           <p class="pl-3" style="white-space: pre-line">{{ action_string }}</p>
         </div>
@@ -27,10 +33,8 @@
 </template>
 
 <script>
-/* eslint-disable */
-
 export default {
-    name: 'vkApi',
+  name: 'vkApi',
   data () {
     return {
       show_export_button: true,
@@ -44,299 +48,295 @@ export default {
       progress_bar_per_cent: 0,
       action_string: '',
       action_string_separator: `
-      `
+  `,
+      isCaptchaNecessary: false,
+      captchaImg: 'https:\\/\\/api.vk.com\\/captcha.php?sid=580204246684&s=1',
+      captchaUserInputKey: ''
     }
   },
   computed: {
-    progress_bar() {
-      let progress_bar_string = this.get_prog_bar_string('⣀⣄⣤⣦⣶⣷⣿', this.progress_bar_per_cent, 10, '')
-      return progress_bar_string
+    progress_bar () {
+      return this.get_prog_bar_string('⣀⣄⣤⣦⣶⣷⣿', this.progress_bar_per_cent, 10, '')
     }
   },
   methods: {
     market_get (count, offset) {
       let methodString = 'market.get'
       let params = {
-        owner_id: '-'+this.$store.state.group_id,
+        owner_id: '-' + this.$store.state.group_id,
         album_id: 0,
         count: count,
         offset: offset,
-        extended: 0        
+        extended: 0
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
     market_getAlbums () {
       let methodString = 'market.getAlbums'
       let params = {
-        owner_id: '-'+this.$store.state.group_id,
+        owner_id: '-' + this.$store.state.group_id
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    photos_getMarketUploadServer() { 
+    photos_getMarketUploadServer () {
       let methodString = 'photos.getMarketUploadServer'
       let params = {
-        'group_id' :  this.$store.state.group_id,//положительное число, обязательный параметр
-        'main_photo' : 1, //является ли фотография обложкой товара (1 — фотография для обложки, 0 — дополнительная фотография) флаг, может принимать значения 1 или 0
-        'crop_x' : 2400, //координата x для обрезки фотографии (верхний правый угол). положительное число
-        'crop_y' : 2400, //координата y для обрезки фотографии (верхний правый угол). положительное число
-        'crop_width' : 2400, //ширина фотографии после обрезки в px. положительное число, минимальное значение 400
+        'group_id': this.$store.state.group_id, // положительное число, обязательный параметр
+        'main_photo': 1, // является ли фотография обложкой товара (1 — фотография для обложки, 0 — дополнительная фотография) флаг, может принимать значения 1 или 0
+        'crop_x': 2400, // координата x для обрезки фотографии (верхний правый угол). положительное число
+        'crop_y': 2400, // координата y для обрезки фотографии (верхний правый угол). положительное число
+        'crop_width': 2400 // ширина фотографии после обрезки в px. положительное число, минимальное значение 400
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    upload_file(upload_url, file_link) { 
+    upload_file (uploadUrl, fileLink) {
       let methodString = 'upload_file'
       let params = {
-        'upload_url' : upload_url,
-        'file_link' : file_link
+        'upload_url': uploadUrl,
+        'file_link': fileLink
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
-    
-    photos_saveMarketPhoto (photo,server,hash,crop_data,crop_hash) {
+
+    photos_saveMarketPhoto (photo, server, hash, cropData, cropHash) {
       let methodString = 'photos.saveMarketPhoto'
       let params = {
-      'group_id' : this.$store.state.group_id, //идентификатор группы, для которой нужно загрузить фотографию. положительное число
-      'photo' :  photo, //параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
-      'server' :  server,//параметр, возвращаемый в результате загрузки фотографии на сервер. целое число, обязательный параметр
-      'hash' : hash,//параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
-      'crop_data' : crop_data,//параметр, возвращаемый в результате загрузки фотографии на сервер. строка
-      'crop_hash' : crop_hash
+        'group_id': this.$store.state.group_id, // идентификатор группы, для которой нужно загрузить фотографию. положительное число
+        'photo': photo, // параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
+        'server': server, // параметр, возвращаемый в результате загрузки фотографии на сервер. целое число, обязательный параметр
+        'hash': hash, // параметр, возвращаемый в результате загрузки фотографии на сервер. строка, обязательный параметр
+        'crop_data': cropData, // параметр, возвращаемый в результате загрузки фотографии на сервер. строка
+        'crop_hash': cropHash
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    update_PhotoBase(link, photo_id) {
-      let methodString = 'update_potobase'
+    update_PhotoBase (link, photoId, productVendorCode) {
+      let methodString = 'update_photobase'
       let params = {
-       'link' : link,
-       'photo_id' : photo_id
+        'link': link,
+        'photo_id': photoId,
+        'productVendorCode': productVendorCode
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    market_search(model_id) {      
+    market_search (modelId) {
       let methodString = 'market.search'
       let params = {
-        'owner_id' : '-' + this.$store.state.group_id, //идентификатор сообщества, которому принадлежат товары. целое число, обязательный параметр
-        'album_id' : 0, //идентификатор подборки, товары из которой нужно вернуть. положительное число, по умолчанию 0
-        'q' : model_id, //строка поискового запроса. Например, зеленые тапочки. строка
-        // 'q' : '#' +  model_id, //строка поискового запроса. Например, зеленые тапочки. строка
-        'price_from' : 0, //минимальное значение цены товаров в сотых долях единицы валюты. Например, 100000. положительное число
-        'price_to' : 1000000000, //максимальное значение цены товаров в сотых долях единицы валюты. Например, 1410000. положительное число
-        'sort' : 3,//вид сортировки. 0 — пользовательская расстановка, 1 — по дате добавления товара, 2 — по цене, 3 — по популярности. целое число, по умолчанию 0
-        'rev0' : 0, //— не использовать обратный порядок, 1 — использовать обратный порядок. положительное число, по умолчанию 1
-        'offset' : 0,//смещение относительно первого найденного товара для выборки определенного подмножества. положительное число
-        'count' : 200, //количест
+        'owner_id': '-' + this.$store.state.group_id, // идентификатор сообщества, которому принадлежат товары. целое число, обязательный параметр
+        'album_id': 0, // идентификатор подборки, товары из которой нужно вернуть. положительное число, по умолчанию 0
+        'q': modelId, // строка поискового запроса. Например, зеленые тапочки. строка
+        'price_from': 0, // минимальное значение цены товаров в сотых долях единицы валюты. Например, 100000. положительное число
+        'price_to': 1000000000, // максимальное значение цены товаров в сотых долях единицы валюты. Например, 1410000. положительное число
+        'sort': 3, // вид сортировки. 0 — пользовательская расстановка, 1 — по дате добавления товара, 2 — по цене, 3 — по популярности. целое число, по умолчанию 0
+        'rev0': 0, // — не использовать обратный порядок, 1 — использовать обратный порядок. положительное число, по умолчанию 1
+        'offset': 0, // смещение относительно первого найденного товара для выборки определенного подмножества. положительное число
+        'count': 200 // количест
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    market_edit(item_id,name,description,price,main_photo_id,photo_ids) {
+    market_edit (itemId, name, description, price, mainPhotoId, photoIds) {
       let methodString = 'market.edit'
       let params = {
-      'owner_id'      : '-' + this.$store.state.group_id,
-      'item_id'       : item_id,
-      'name'          : name,
-      'description'   : description,
-      'category_id'   : 205,
-      'price'         : price,
-      'deleted'       : 0,
-      'main_photo_id' : main_photo_id, 
-      'photo_ids'     : photo_ids,
+        'owner_id': '-' + this.$store.state.group_id,
+        'item_id': itemId,
+        'name': name,
+        'description': description,
+        'category_id': 205,
+        'price': price,
+        'deleted': 0,
+        'main_photo_id': mainPhotoId,
+        'photo_ids': photoIds
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
-    market_delete (product_id) {
+
+    market_delete (productId) {
       let methodString = 'market.delete'
       let params = {
-        'owner_id'      : '-' + this.$store.state.group_id,
-		    'item_id' : product_id 
+        'owner_id': '-' + this.$store.state.group_id,
+        'item_id': productId
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
-    market_add(name,description,price,main_photo_id,photo_ids) {
+    market_add (name, description, price, mainPhotoId, photoIds) {
       let methodString = 'market.add'
       let params = {
-        'owner_id'      : '-' + this.$store.state.group_id,
-        'name'          : name,
-        'description'   : description,
-        'category_id'   : 205,
-        'price'         : price,
-        'deleted'       : 0,
-        'main_photo_id' : main_photo_id, 
-        'photo_ids'     : photo_ids,
+        'owner_id': '-' + this.$store.state.group_id,
+        'name': name,
+        'description': description,
+        'category_id': 205,
+        'price': price,
+        'deleted': 0,
+        'main_photo_id': mainPhotoId,
+        'photo_ids': photoIds
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
-    
-    market_addToAlbum(market_item_id, album_id) {
 
+    market_addToAlbum (marketItemId, albumId) {
       let methodString = 'market.addToAlbum'
       let params = {
-        'owner_id' : '-' + this.$store.state.group_id,
-        'item_id'  : market_item_id,
-        'album_ids' : album_id
+        'owner_id': '-' + this.$store.state.group_id,
+        'item_id': marketItemId,
+        'album_ids': albumId
       }
-      return this._onwApi_call(methodString,params)
+      return this._onwApi_call(methodString, params)
     },
 
     get_all_product_ids () {
-      return new Promise(async (resolve, reject) => {
-        let counter = Array.from(Array(75).keys());
+      return new Promise(async (resolve) => {
+        let counter = Array.from(Array(75).keys())
         let count = 200
         let offset = 0
-        let all_product_ids = []
+        let allProductIds = []
         for (let i in counter) {
-          let market_products = await this.market_get (count, offset)
-          // console.log(market_products.response.items.length)
-          // console.log(market_products.response.items)
+          console.log('--------->', i)
+          let marketProducts = await this.market_get(count, offset)
           await this.pause(this.sleeping_period)
-          for (let product in market_products.response.items) {
-            all_product_ids.push(market_products.response.items[product].id)
+          for (let product in marketProducts.response.items) {
+            allProductIds.push(marketProducts.response.items[product].id)
           }
-          offset += market_products.response.items.length
-          if (market_products.response.items.length< 200) {
+          offset += marketProducts.response.items.length
+          if (marketProducts.response.items.length < 200) {
             break
-          } 
+          }
         }
-        resolve(all_product_ids)
+        resolve(allProductIds)
       })
-      .then(result=>{
-        return result
-      })
+        .then(result => {
+          return result
+        })
     },
 
-    isProductInMarket(search_string) {
-      // console.log('-Is ' + search_string + ' in market?')
-      return new Promise(async (resolve, reject) => {
-        let searchResult = await this.market_search(search_string) 
+    isProductInMarket (searchString) {
+      console.log('-Is ' + searchString + ' in market?')
+      return new Promise(async (resolve) => {
+        let searchResult = await this.market_search(searchString)
+        console.log(searchResult)
+        console.log('^^^^^^^^^^^^')
         resolve(searchResult)
       })
-      .then(x => new Promise(resolve => setTimeout(() => {
-        // console.log(this.sleeping_period_text + this.sleeping_period)
-        resolve(x)
-      }, this.sleeping_period)))
-      .then(searchResult=>{
-        if (searchResult.error) {
-          console.error('Search in market ERROR')
-          console.error(searchResult)
-        }
-        if (searchResult.response.count == 1) {
-          if (searchResult.response.items[0].description.indexOf(search_string) != -1) {
-              console.log('Is ' + search_string + ' in market? - YES')
+        .then(x => new Promise(resolve => setTimeout(() => {
+          // console.log(this.sleeping_period_text + this.sleeping_period)
+          resolve(x)
+        }, this.sleeping_period)))
+        .then(searchResult => {
+          if (searchResult.error) {
+            console.error('Search in market ERROR')
+            console.error(searchResult)
+          }
+          if (searchResult.response.count === 1) {
+            if (searchResult.response.items[0].description.indexOf(searchString) !== -1) {
+              console.log('Is ' + searchString + ' in market? - YES')
               this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
               return searchResult.response.items[0].id
             }
-          return false
-        } else if (searchResult.response.count > 1) {
-          for (let item_index in searchResult.response.items) {
-            console.log(searchResult.response.items[item_index].description.indexOf(search_string))
-            if (searchResult.response.items[item_index].description.indexOf(search_string) != -1) {
-              this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
-              return searchResult.response.items[item_index].id
+            return false
+          } else if (searchResult.response.count > 1) {
+            for (let itemIndex in searchResult.response.items) {
+              console.log(searchResult.response.items[itemIndex].description.indexOf(searchString))
+              if (searchResult.response.items[itemIndex].description.indexOf(searchString) !== -1) {
+                console.log('Есть в группе. Запуск процесса обновления')
+                this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
+                return searchResult.response.items[itemIndex].id
+              }
             }
+            return false
+          } else {
+            console.log('Is ' + searchString + ' in market? - NO')
+            this.logCurrentAction('Нет в группе. Запуск процесса добавления' + this.action_string_separator)
+            return false
           }
-          return false
-        } else {
-          console.log('Is ' + search_string + ' in market? - NO')
-          this.logCurrentAction('Нет в группе. Запуск процесса добавления' + this.action_string_separator)
-          return false
-        }
-      })
-
+        })
     },
-    export_AllProductsToVk() {
+    export_AllProductsToVk () {
       this.show_export_button = false
       let products = this.$store.state.products
       let productCounter = 0
-      let market_item_ids = []
-      return new Promise(async (resolve, reject) => {
+      let marketItemIds = []
+      return new Promise(async (resolve) => {
         for (let product of products) {
-          ++productCounter
-          this.current_product_number = productCounter+1
+          this.current_product_number = productCounter + 1
 
           // TODO delet next IF before production
-          // if (productCounter<880) continue; 
+          // if (productCounter > 3) continue
 
           this.change_title(0)
           this.current_product = product
-          console.log(productCounter, product.vendorCode);
-          //search products in market by product alias
-          let url_parts = product.url.split('/')
-          let search_string = url_parts[url_parts.length-1]
-          if (search_string == '') {
-            search_string = url_parts[url_parts.length-2]
-          }
-          let market_item_id = await this.isProductInMarket(search_string)
+          console.log(productCounter, product.vendorCode)
+          const searchString = '[' + product.vendorCode + ']'
+          let marketItemId = await this.isProductInMarket(searchString)
           this.change_title(8)
-          let productPrepariedData = await this.prepare_ProductData(productCounter)
+          let productPreparedData = await this.prepare_ProductData(productCounter)
           this.change_title(64)
-          console.log('Product data preparied. See below')
-          console.log(productPrepariedData)
-          if (productPrepariedData.main_photo_id === '') { // no photos skip product;
-                continue;
+          console.log('Product data prepared. See below')
+          console.log(productPreparedData)
+          if (productPreparedData.main_photo_id === '') { // no photos skip product;
+            continue
           }
-          let name = productPrepariedData.name
-          let description = productPrepariedData.description
-          let price = productPrepariedData.price
-          let main_photo_id = productPrepariedData.main_photo_id
-          let photo_ids = productPrepariedData.photo_ids
-          if (market_item_id != false) {
-            market_item_ids.push(market_item_id)
-            console.log( 'UPDATE PRODUCT! ' + market_item_id )
+          let name = productPreparedData.name
+          let description = productPreparedData.description
+          let price = productPreparedData.price
+          let mainPhotoId = productPreparedData.main_photo_id
+          let photoIds = productPreparedData.photo_ids
+          if (marketItemId !== false) {
+            marketItemIds.push(marketItemId)
+            console.log('UPDATE PRODUCT! ' + marketItemId)
             this.logCurrentAction('Отправляем запрос на изменение товара' + this.action_string_separator)
-            let response = await this.market_edit(market_item_id,name,description,price,main_photo_id,photo_ids)
-            if (response.response == 1) {
+            let response = await this.market_edit(marketItemId, name, description, price, mainPhotoId, photoIds)
+            if (response.response === 1) {
               console.log('Product updated')
               this.logCurrentAction('Успешно!' + this.action_string_separator)
             } else {
-             
-                console.log('ERROR')
-                console.log('error_code: ' + response.error.error_code)
-                console.error('error_msg: ' + response.error.error_msg)
-                if (response.error.error_msg == 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
+              console.log('ERROR')
+              console.log('error_code: ' + response.error.error_code)
+              console.error('error_msg: ' + response.error.error_msg)
+              if (response.error.error_msg === 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
                 console.log(response.error.request_params[8].value)
                 console.log(response.error.request_params[9].value)
                 console.log('you must to delete photos from base. Start fixin this mistake')
-                let bad_id1 = response.error.request_params[9].value
-                let bad_id2 = response.error.request_params[10].value
+                let badId1 = response.error.request_params[9].value
+                let badId2 = response.error.request_params[10].value
 
-                this.$store.state.badPhotoIds = ((bad_id1+','+bad_id2).split(','))
+                this.$store.state.badPhotoIds = ((badId1 + ',' + badId2).split(','))
                 console.log(this.$store.state.badPhotoIds)
                 this.change_title(8)
-                productPrepariedData = await this.prepare_ProductData(productCounter)
-                console.log('Product data preparied. See below')
-                console.log(productPrepariedData)
-                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
-                    continue;
+                productPreparedData = await this.prepare_ProductData(productCounter)
+                console.log('Product data prepared. See below')
+                console.log(productPreparedData)
+                if (productPreparedData.main_photo_id === '') { // no photos skip product;
+                  continue
                 }
-                let name = productPrepariedData.name
-                let description = productPrepariedData.description
-                let price = productPrepariedData.price
-                let main_photo_id = productPrepariedData.main_photo_id
-                let photo_ids = productPrepariedData.photo_ids
-                response = await this.market_edit(market_item_id,name,description,price,main_photo_id,photo_ids)
-                } 
-                if (response.error) { 
+                let name = productPreparedData.name
+                let description = productPreparedData.description
+                let price = productPreparedData.price
+                let mainPhotoId = productPreparedData.main_photo_id
+                let photoIds = productPreparedData.photo_ids
+                response = await this.market_edit(marketItemId, name, description, price, mainPhotoId, photoIds)
+              }
+              if (response.error) {
                 console.error(`
-                ПОВТОРНАЯ ОШИБКА
-                error_msg: ` + response.error.error_msg)
-                }
+            ПОВТОРНАЯ ОШИБКА
+            error_msg: ` + response.error.error_msg)
+              }
             }
             this.change_title(85)
             await this.pause(this.sleeping_period)
             let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
             console.log('Add this product to album')
             this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
-            let add_to_album_result = await this.market_addToAlbum(market_item_id, AlbumId)
-            if (add_to_album_result.response == 1) {
+            let addToAlbumResult = await this.market_addToAlbum(marketItemId, AlbumId)
+            if (addToAlbumResult.response === 1) {
               console.log('Product added to album')
               this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
-            } else if (add_to_album_result.error.error_code == 1404){
+            } else if (addToAlbumResult.error.error_code === 1404) {
               console.log('Already added to this album')
               this.logCurrentAction('Товар уже добавлен в эту подборку' + this.action_string_separator)
             } else {
@@ -347,58 +347,56 @@ export default {
           } else {
             console.log('ADD PRODUCT!')
             this.logCurrentAction('Отправляем запрос на добавление товара' + this.action_string_separator)
-            let response = await this.market_add(name,description,price,main_photo_id,photo_ids)
+            let response = await this.market_add(name, description, price, mainPhotoId, photoIds)
             this.change_title(80)
             try {
               if (response.error) {
-
                 // TODO create error handler function
-
                 console.log('ERROR')
                 console.log('error_code: ' + response.error.error_code)
                 console.error('error_msg: ' + response.error.error_msg)
-                if (response.error.error_msg == 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
-                console.log(response.error.request_params[8].value)
-                console.log(response.error.request_params[9].value)
-                console.log('you must to delete photos from base. Start fixin this mistake')
-                let bad_id1 = response.error.request_params[8].value
-                let bad_id2 = response.error.request_params[9].value
+                if (response.error.error_msg === 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
+                  console.log(response.error.request_params[8].value)
+                  console.log(response.error.request_params[9].value)
+                  console.log('you must to delete photos from base. Start fixin this mistake')
+                  let badId1 = response.error.request_params[8].value
+                  let badId2 = response.error.request_params[9].value
 
-                this.$store.state.badPhotoIds = ((bad_id1+','+bad_id2).split(','))
-                console.log(this.$store.state.badPhotoIds)
-                this.change_title(8)
-                productPrepariedData = await this.prepare_ProductData(productCounter)
-                console.log('Product data preparied. See below')
-                console.log(productPrepariedData)
-                if (productPrepariedData.main_photo_id === '') { // no photos skip product;
-                    continue;
+                  this.$store.state.badPhotoIds = ((badId1 + ',' + badId2).split(','))
+                  console.log(this.$store.state.badPhotoIds)
+                  this.change_title(8)
+                  productPreparedData = await this.prepare_ProductData(productCounter)
+                  console.log('Product data prepared. See below')
+                  console.log(productPreparedData)
+                  if (productPreparedData.main_photo_id === '') { // no photos skip product;
+                    continue
+                  }
+                  let name = productPreparedData.name
+                  let description = productPreparedData.description
+                  let price = productPreparedData.price
+                  let mainPhotoId = productPreparedData.main_photo_id
+                  let photoIds = productPreparedData.photo_ids
+                  response = await this.market_add(name, description, price, mainPhotoId, photoIds)
                 }
-                let name = productPrepariedData.name
-                let description = productPrepariedData.description
-                let price = productPrepariedData.price
-                let main_photo_id = productPrepariedData.main_photo_id
-                let photo_ids = productPrepariedData.photo_ids
-                response = await this.market_add(name,description,price,main_photo_id,photo_ids)
-                }
-              } 
+              }
+
               if (response.error) {
-
                 // TODO create error handler function
-
                 console.log('ERROR')
                 console.log('error_code: ' + response.error.error_msg)
               }
+
               if (response.response.market_item_id) {
-                market_item_ids.push(response.response.market_item_id)
+                marketItemIds.push(response.response.market_item_id)
                 console.log('Product added')
                 this.logCurrentAction('Успешно!' + this.action_string_separator)
                 await this.pause(this.sleeping_period)
                 let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
-                let market_item_id = response.response.market_item_id
+                let marketItemId = response.response.market_item_id
                 console.log('Add this product to album')
                 this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
-                let add_to_album_result = await this.market_addToAlbum(market_item_id, AlbumId)
-                if (add_to_album_result.response == 1) {
+                let addToAlbumResult = await this.market_addToAlbum(marketItemId, AlbumId)
+                if (addToAlbumResult.response === 1) {
                   console.log('Product added to album')
                   this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
                 } else {
@@ -409,140 +407,160 @@ export default {
                 console.error('Error: Product is not added')
                 this.logCurrentAction('Oшибка: товар не добавлен!' + this.action_string_separator)
               }
-            } catch(error) {
+            } catch (error) {
               console.log('Catch Error')
               console.error(error)
               this.logCurrentAction('Критическая ошибка: ' + this.action_string_separator)
             }
-            
           }
           this.change_title(100)
-          await this.pause(this.sleeping_period)
-          this.logCurrentAction() // очистить лог.
-         
-        }
-        resolve(market_item_ids)
-      })
-      .then(async (market_item_ids)=> {
-        console.log(market_item_ids)
-        let all_product_ids = await this.get_all_product_ids()
-        console.log(all_product_ids)
-        let product_ids_for_delete = await this.get_bad_products_ids2(all_product_ids, market_item_ids)
-        await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
-        for (let product in product_ids_for_delete) {
-          await this.logCurrentAction()
-          let product_delete_result = await this.market_delete(product_ids_for_delete[product])
-          await this.pause(this.sleeping_period)
-          if (product_delete_result.error) {
-            await this.logCurrentAction(product_ids_for_delete[product] + ' Ошибка удаления' + this.action_string_separator)
-            console.error(product_delete_result)
+          if (productCounter > 1000000000000000) {
+            await this.pause(1000000000)
           } else {
-            await this.logCurrentAction(product_ids_for_delete[product] + ' Удален ' + this.action_string_separator)
-            console.log(product_ids_for_delete[product] + 'IS DELETED')
+            await this.pause(this.sleeping_period)
           }
+          this.logCurrentAction() // очистить лог.
+          productCounter += 1
         }
-        console.log('ВЫГРУЗКА ЗАКОНЧЕНА')
-        this.logCurrentAction('РАБОТА ВЫПОЛНЕНА')
+        resolve(marketItemIds)
       })
+        .then(async (marketItemIds) => {
+          console.log(marketItemIds)
+          let allProductIds = await this.get_all_product_ids()
+          console.log(allProductIds)
+          let productIdsForDelete = await this.get_bad_products_ids2(allProductIds, marketItemIds)
+          await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
+          for (let product in productIdsForDelete) {
+            await this.logCurrentAction()
+            let productDeleteResult = await this.market_delete(productIdsForDelete[product])
+            await this.pause(this.sleeping_period)
+            if (productDeleteResult.error) {
+              await this.logCurrentAction(productIdsForDelete[product] + ' Ошибка удаления' + this.action_string_separator)
+              console.error(productDeleteResult)
+            } else {
+              await this.logCurrentAction(productIdsForDelete[product] + ' Удален ' + this.action_string_separator)
+              console.log(productIdsForDelete[product] + 'IS DELETED')
+            }
+          }
+          console.log('ВЫГРУЗКА ЗАКОНЧЕНА')
+          this.logCurrentAction('РАБОТА ВЫПОЛНЕНА')
+        })
     },
 
-    get_bad_products_ids2(all_product_ids, market_item_ids) {
-      let difference = all_product_ids.filter(x => !market_item_ids.includes(x));
+    get_bad_products_ids2 (allProductIds, marketItemIds) {
+      let difference = allProductIds.filter(x => !marketItemIds.includes(x))
       console.log(difference)
       return difference
     },
 
-    get_photo_id(file_link) {
+    get_photo_id (fileLink, vendorCode) {
       return new Promise(async (resolve, reject) => {
-        let photo_id = ''
-        if (this.$store.state.photoBase[file_link]) {
-          photo_id = this.$store.state.photoBase[file_link]
-          if (this.$store.state.badPhotoIds.includes(photo_id.toString())) {
-            photo_id = ''
+        let photoId = ''
+        if (this.$store.state.photoBase[vendorCode] && this.$store.state.photoBase[vendorCode][fileLink]) {
+          photoId = this.$store.state.photoBase[vendorCode][fileLink]
+          if (this.$store.state.badPhotoIds.includes(photoId.toString())) {
+            photoId = ''
           }
-        } 
-        if (photo_id == '') {
-          photo_id = await this.upload_photoToVkGroupCommonMethod(file_link)
         }
-        resolve(photo_id)
+        if (photoId === '') {
+          photoId = await this.upload_photoToVkGroupCommonMethod(fileLink, vendorCode)
+        }
+        resolve(photoId)
       })
-      .then(photo_id => {
-        return photo_id
-      })
+        .then(photoId => {
+          return photoId
+        })
     },
 
-    prepare_ProductData(array_index) {
+    prepare_ProductData (arrayIndex) {
       return new Promise(async (resolve, reject) => {
         this.logCurrentAction('Формируем запрос' + this.action_string_separator)
-        let productPhotoUrls = this.$store.state.products[array_index].picture
+        let productPhotoUrls = this.$store.state.products[arrayIndex].picture
+        const vendorCode = this.$store.state.products[arrayIndex].vendorCode
 
-        
         if (productPhotoUrls === undefined) {
-        console.error('---------------')
-        console.error(productPhotoUrls)
-        console.error('This product don\'t have photos, SKIP...')
-        console.error('---------------')
-          resolve(['',''])
-          }
+          console.error('---------------')
+          console.error(productPhotoUrls)
+          console.error('This product don\'t have photos, SKIP...')
+          console.error('---------------')
+          resolve(['', ''])
+        }
         let photoCounter = 0
-        let main_photo_id = ''
-        let photo_ids = ''
+        let mainPhotoId = ''
+        let photoIds = ''
         let separator = ''
         if (Array.isArray(productPhotoUrls)) {
           for (let item of productPhotoUrls) {
-          this.progress_bar_per_cent += 11
-          this.change_title(this.progress_bar_per_cent)
-          ++photoCounter
-          if (photoCounter == 1) {
-            main_photo_id = await this.get_photo_id(item)
-          } else if (photoCounter<=5) {
-            if (photo_ids != '') {separator = ','}
-            photo_ids += separator + await this.get_photo_id(item)
-          } else {
-            console.log('break')
-            break
+            this.progress_bar_per_cent += 11
+            this.change_title(this.progress_bar_per_cent)
+            ++photoCounter
+            if (photoCounter === 1) {
+              mainPhotoId = await this.get_photo_id(item, vendorCode)
+            } else if (photoCounter <= 5) {
+              if (photoIds !== '') {
+                separator = ','
+              }
+              photoIds += separator + await this.get_photo_id(item, vendorCode)
+            } else {
+              console.log('break')
+              break
+            }
           }
-          // console.log('main_photo_id: ' + main_photo_id)
-          // console.log('photo_ids: ' + photo_ids)
-          }
-          resolve([main_photo_id,photo_ids])
+          resolve([mainPhotoId, photoIds])
         } else {
-          main_photo_id = await this.get_photo_id(productPhotoUrls)
-          resolve([main_photo_id,''])
+          mainPhotoId = await this.get_photo_id(productPhotoUrls, vendorCode)
+          resolve([mainPhotoId, ''])
         }
       })
-      .then((photo_id_array) => {
-        this.prepared_product_data = this.$store.state.products[array_index]
-        let onStore = 'НЕТ. Товар в пути. НАПИШИТЕ ПРОДАВЦУ что бы узнать дату поступления на склад.'
-        if (this.prepared_product_data._available) {
-          onStore = 'ДА'
-        }
-        this.prepared_product_data._available
-        let productSiteUrl = this.prepared_product_data.url
-        let vendorCode = this.prepared_product_data.vendorCode
-        let description = this.prepared_product_data.description
-        description = description.replace( /\s{2,}/g, " " )
-        description = 'Артикул товара: #' + vendorCode + ` 
-          Наличие на складе: ` + onStore + `
-          Ссылка на сайт: ` + productSiteUrl + '?utm_source=vk.com&utm_medium=group_shop&utm_campaign=vk.com_group_shop&utm_content=product_'+ vendorCode +`
-          ОПИСАНИЕ ТОВАРА:
-          `+ description
-        let data = {
-          'name'          : this.prepared_product_data.name,
-          'description'   : description,
-          'category_id'   : 205,
-          'price'         : this.prepared_product_data.price,
-          'deleted'       : 0,
-          'main_photo_id' : photo_id_array[0], 
-          'photo_ids'     : photo_id_array[1],
-        }
-        this.prepared_product_data = data
-        this.logCurrentAction('Запрос сформирован' + this.action_string_separator)
-        return data
-      })
+        .then((photoIdArray) => {
+          this.prepared_product_data = this.$store.state.products[arrayIndex]
+          let onStore = 'НЕТ. Товар в пути. НАПИШИТЕ ПРОДАВЦУ что бы узнать дату поступления на склад.'
+          if (this.prepared_product_data._available) {
+            onStore = 'ДА'
+          }
+
+          let productSiteUrl = this.prepared_product_data.url
+          let vendorCode = this.prepared_product_data.vendorCode
+          let description = this.prepared_product_data.description
+          description = description.replace(/\s{2,}/g, ' ')
+          description = 'Артикул товара: [' + vendorCode + `]
+      Наличие на складе: ` + onStore + `
+      Ссылка на сайт: ` + productSiteUrl + '?utm_source=vk.com&utm_medium=group_shop&utm_campaign=vk.com_group_shop&utm_content=product_' + vendorCode + `
+      ОПИСАНИЕ ТОВАРА:
+      ` + description
+          let data = {
+            'name': this.getProductNameBefore100Chars(this.prepared_product_data.name),
+            'description': description,
+            'category_id': 205,
+            'price': this.prepared_product_data.price,
+            'deleted': 0,
+            'main_photo_id': photoIdArray[0],
+            'photo_ids': photoIdArray[1]
+          }
+          this.prepared_product_data = data
+          this.logCurrentAction('Запрос сформирован' + this.action_string_separator)
+          return data
+        })
     },
 
-    upload_photoToVkGroupCommonMethod(file_link) {
+    getProductNameBefore100Chars (productsName) {
+      if (productsName.length < 100) {
+        return productsName
+      }
+      let nameParts = productsName.split(' ')
+      console.log('---->NAME PARTS', nameParts)
+      let newName = ''
+      nameParts.every((part) => {
+        if ((newName + ' ' + part).length < 100) {
+          newName += ' ' + part
+          return true
+        }
+        return false
+      })
+      return newName
+    },
+
+    upload_photoToVkGroupCommonMethod (fileLink, vendorCode) {
       console.log('----------------------------------------')
       console.log('Uploading new photo')
       this.logCurrentAction('Loading photo: ')
@@ -553,51 +571,71 @@ export default {
         this.logCurrentAction('✓')
         resolve(response)
       })
-      .then(x => new Promise(resolve => setTimeout(() => {
-        // console.log(this.sleeping_period_text + this.sleeping_period)
-        resolve(x)
+        .then(x => new Promise(resolve => setTimeout(() => {
+          // console.log(this.sleeping_period_text + this.sleeping_period)
+          resolve(x)
         }, this.sleeping_period)))
-      .then(async (result) => {
-        // TODO make reject scenario
-        console.log('Uploading photo to server')
-        this.logCurrentAction('✓')
-        let response = await this.upload_file(result.response.upload_url, file_link)
-        return response
-      })
-      .then(x => new Promise(resolve => setTimeout(() => {
-        // console.log(this.sleeping_period_text + this.sleeping_period)
-        resolve(x)
+        .then(async (result) => {
+          // TODO make reject scenario
+          console.log('Uploading photo to server')
+          this.logCurrentAction('✓')
+          let response = await this.upload_file(result.response.upload_url, fileLink)
+          return response
+        })
+        .then(x => new Promise(resolve => setTimeout(() => {
+          // console.log(this.sleeping_period_text + this.sleeping_period)
+          resolve(x)
         }, this.sleeping_period)))
-      .then(async (uploaded_file_info) => {
-        let photo = uploaded_file_info.photo
-        let server =uploaded_file_info.server
-        let hash =uploaded_file_info.hash
-        let crop_data =uploaded_file_info.crop_data
-        let crop_hash =uploaded_file_info.crop_hash
-        // TODO make reject scenario
-        console.log('Saving uploaded photo')
-        this.logCurrentAction('✓')
-        let response = await this.photos_saveMarketPhoto(photo,server,hash,crop_data,crop_hash)
-        return response
-      })
-      .then(x => new Promise(resolve => setTimeout(() => {
-        // console.log(this.sleeping_period_text + this.sleeping_period)
-        resolve(x)
+        .then(async (uploadedFileInfo) => {
+          let photo = uploadedFileInfo.photo
+          let server = uploadedFileInfo.server
+          let hash = uploadedFileInfo.hash
+          let cropData = uploadedFileInfo.crop_data
+          let cropHash = uploadedFileInfo.crop_hash
+          // TODO make reject scenario
+          console.log('Saving uploaded photo')
+          this.logCurrentAction('✓')
+          let response = await this.photos_saveMarketPhoto(photo, server, hash, cropData, cropHash)
+          return response
+        })
+        .then(x => new Promise(resolve => setTimeout(() => {
+          // console.log(this.sleeping_period_text + this.sleeping_period)
+          resolve(x)
         }, this.sleeping_period)))
-      .then(saved_photo_info=>{
-        let photo_id = saved_photo_info.response[0].id
-        this.logCurrentAction('OK' + this.action_string_separator)
-        this.update_PhotoBase(file_link, photo_id) 
-        return photo_id
-      })
-      .catch(async (error)=>{
-        console.log('^^^^^^^^^^^^^^^')
-        console.error(error)
-        console.log('ERROR UPLOADING PHOTO: Skip this link')
-        this.logCurrentAction(this.action_string_separator + 'Ошибка загрузки фото. Пропускаем данную ссылку.' + this.action_string_separator)
-        // let response = await this.upload_photoToVkGroupCommonMethod(file_link)
-        return ''
-      })
+        .then(savedPhotoInfo => {
+          let photoId = savedPhotoInfo.response[0].id
+          this.logCurrentAction('OK' + this.action_string_separator)
+          console.log('-----update_PhotoBase-----------')
+          console.log(fileLink, photoId, vendorCode)
+
+          let resultOfPhotoBaseUpdate = this.update_PhotoBase(fileLink, photoId, vendorCode)
+          console.log('resultOfPhotoBaseUpdate', resultOfPhotoBaseUpdate)
+          return photoId
+        })
+        .catch(async (error) => {
+          console.log('^^^^^^^^^^^^^^^')
+          console.error(error)
+          console.log('ERROR UPLOADING PHOTO: Skip this link')
+          this.logCurrentAction(this.action_string_separator + 'Ошибка загрузки фото. Пропускаем данную ссылку.' + this.action_string_separator)
+          // let response = await this.upload_photoToVkGroupCommonMethod(file_link)
+          return ''
+        })
+    },
+
+    sendCaptcha () {
+      this.isCaptchaNecessary = false
+      console.log('capcha done')
+    },
+
+    changeCaptchaTitle () {
+      document.title = document.title === '---ЖДЕМ КАПТЧУ---' ? '!!! ЖДЕМ КАПТЧУ !!!' : '---ЖДЕМ КАПТЧУ---'
+    },
+
+    isResponseHasCaptcha (response) {
+      if (response.error && response.error.error_code === 14) {
+        return true
+      }
+      return false
     },
 
     _onwApi_call (method, params) {
@@ -607,95 +645,115 @@ export default {
         method: method,
         params: params
       }
-      return fetch(url,{
+      return fetch(url, {
         method: 'POST',
         body: JSON.stringify(vkApiCallObject),
         mode: 'cors',
-        headers: { 'Content-Type': 'application/json; charset=utf-8'}
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
       }).then((result) => {
         return result.json()
         // return result.text()
-      }).then((json)=>{
-        params.access_token = 'hidden'
+      }).then(async (json) => {
+        if (typeof json !== 'object') {
+          json = JSON.parse(json)
+        }
         this.response_text = {
-          method : method,
-          params : params,
+          method: method,
+          params: params,
           response: json
         }
+
         console.log(this.response_text)
-        if (typeof json == 'object') {
-          return json
-        } else {
-          return JSON.parse(json)
-        }
-      })
-      .catch(async (error)=>{
-        console.log('^^^^^^^^^^^^^^^')
-        console.log(error)
-        console.log('^^^^^^^метод^^^^^^')
-        console.log(method)
-        console.log('^^^^^параметры^^^^^^')
-        console.log(params)
-        console.log('ERROR API CALL: RETRY')
-        if (method === 'upload_file') {
-          if (!params.file_link) {
-            console.error('BROKEN UPLOAD FILE; EXIT');
-            return error;
+
+        if (this.isResponseHasCaptcha(json)) { // capcha handling
+          this.isCaptchaNecessary = true
+          if (json.error && json.error.captcha_img) {
+            this.captchaImg = json.error.captcha_img
           }
+          if (json.error && json.error.captcha_sid) {
+            params.captcha_sid = json.error.captcha_sid
+          }
+
+          while (this.isCaptchaNecessary) {
+            console.log('ждем captcha')
+            this.changeCaptchaTitle()
+            await this.pause(1000)
+          }
+          params.captcha_key = this.captchaUserInputKey
+          console.log('captcha got retry request with  this params')
+          console.log(params)
+          console.log('-------------------------------------------')
+          json = this._onwApi_call(method, params)
         }
-        this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.' + this.action_string_separator)
-        await this.pause(15000)
-
-        let response = await this._onwApi_call (method, params)
-        return response
+        return json
       })
-    }, 
+        .catch(async (error) => {
+          console.log('^^^^^^^^^^^^^^^')
+          console.log(error)
+          console.log('^^^^^^^метод^^^^^^')
+          console.log(method)
+          console.log('^^^^^параметры^^^^^^')
+          console.log(params)
+          console.log('ERROR API CALL: RETRY')
+          if (method === 'upload_file') {
+            if (!params.file_link) {
+              console.error('BROKEN UPLOAD FILE; EXIT')
+              return error
+            }
+          }
+          this.logCurrentAction('Ошибка API запроса. Пробуем ещё раз.' + this.action_string_separator)
+          await this.pause(1000)
 
-    logCurrentAction(action_string) {
-      this.action_string += action_string
-      if (arguments.length == 0) {
+          let response = await this._onwApi_call(method, params)
+          return response
+        })
+    },
+
+    logCurrentAction (actionString) {
+      this.action_string += actionString
+      if (arguments.length === 0) {
         this.action_string = ''
       }
     },
 
-    pause(pausePeriod) {
-      return new Promise(async (resolve, reject) => {
+    pause (pausePeriod) {
+      return new Promise(async (resolve) => {
         console.log('Pause ' + pausePeriod + ' ms began')
-        setTimeout(()=>resolve('Pause end'), pausePeriod)
+        setTimeout(() => resolve('Pause end'), pausePeriod)
       })
-      .then(pauseEndMessage=>{
-        console.log(pauseEndMessage)
-        return pauseEndMessage
-      })
+        .then(pauseEndMessage => {
+          console.log(pauseEndMessage)
+          return pauseEndMessage
+        })
     },
-    get_prog_bar_string(bar_string, per_cent, bars, sep = ' ') {
-      if (per_cent > 100) {
-        per_cent = 100
+    get_prog_bar_string (barString, perCent, bars, sep = ' ') {
+      if (perCent > 100) {
+        perCent = 100
       }
-      let result_bar_string = ''
-      let bar_weight = 100 / bars
-      let full_bars = Math.floor(per_cent / bar_weight)
-      let bar_part = (per_cent / bar_weight) - Math.floor(per_cent / bar_weight)
-      let part_max = Math.round(1/((1 / bar_weight) - Math.floor(1 / bar_weight)))
+      let resultBarString = ''
+      let barWeight = 100 / bars
+      let fullBars = Math.floor(perCent / barWeight)
+      let barPart = (perCent / barWeight) - Math.floor(perCent / barWeight)
+      let partMax = Math.round(1 / ((1 / barWeight) - Math.floor(1 / barWeight)))
 
-      for (let i = 1; i<= full_bars; i++) {
-        result_bar_string += bar_string[bar_string.length - 1] + sep
+      for (let i = 1; i <= fullBars; i++) {
+        resultBarString += barString[barString.length - 1] + sep
       }
-      if (bar_part != 0) {
-        let current_parts = bar_part / (1 / part_max)
-        let part_char_index = Math.round(((bar_string.length-1) / part_max * current_parts )) 
-        result_bar_string += bar_string[part_char_index] + sep
+      if (barPart !== 0) {
+        let currentParts = barPart / (1 / partMax)
+        let partCharIndex = Math.round(((barString.length - 1) / partMax * currentParts))
+        resultBarString += barString[partCharIndex] + sep
 
-        full_bars +=1
+        fullBars += 1
       }
-      for (let i = full_bars; i< bars; i++) {
-        result_bar_string += bar_string[0] + sep
+      for (let i = fullBars; i < bars; i++) {
+        resultBarString += barString[0] + sep
       }
-      return  result_bar_string
+      return resultBarString
     },
-    change_title(per_cent) {
-      this.progress_bar_per_cent = per_cent
-      document.title = this.progress_bar + '( '+ this.current_product_number +'/' +this.$store.state.products.length + ' )'
+    change_title (perCent) {
+      this.progress_bar_per_cent = perCent
+      document.title = this.progress_bar + '( ' + this.current_product_number + '/' + this.$store.state.products.length + ' )'
     }
   }
 }

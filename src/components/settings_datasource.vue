@@ -19,7 +19,7 @@
       <h5 class="card-title">Текущие данные от {{ sourceDate }}:</h5>
       <p class="card-text">Категории: {{ categories.length }}</p>
       <p class="card-text">Товары: {{ products.length }}</p>
-      <p class="card-text">Фотографий в базе: {{ photoBaseObj.length }}</p>
+      <p class="card-text">Товаров с предзагруженными фотографиями: {{ photoBaseObj.length }}</p>
 <router-link tag="button" type="button" class="btn btn-dark" to="/process" >
         Go to Process room
       </router-link>
@@ -49,7 +49,7 @@ export default {
       this.$store.state.products = this.xmlObj.yml_catalog.shop.offers.offer
       this.$store.state.categories = this.xmlObj.yml_catalog.shop.categories.category
       this.$store.state.sourceDate = this.xmlObj.yml_catalog._date
-      document.title = 'VK EXPORT:( 0/' +this.$store.state.products.length + ' )' 
+      document.title = 'VK EXPORT:( 0/' +this.$store.state.products.length + ' )'
     }
   },
   computed: {
@@ -66,7 +66,7 @@ export default {
       return this.$store.state.photoBase
     },
     isData () {
-      if (this.$store.state.categories.length > 0 && 
+      if (this.$store.state.categories.length > 0 &&
           this.$store.state.products.length > 0) {
             return true
           }
@@ -119,12 +119,13 @@ export default {
           }
         })
         .then(obj => {
-          let photoCounter = 0 
+          let photoCounter = 0
           for (let key in obj) {
             ++photoCounter
           }
           obj.length = photoCounter
           this.$store.state.photoBase = obj
+          console.log(obj)
           this.isGettingPhotoBaseNow = false
         })
     }
