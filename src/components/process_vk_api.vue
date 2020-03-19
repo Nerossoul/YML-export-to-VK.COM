@@ -8,8 +8,14 @@
             class="btn btn-dark"
             @click="export_AllProductsToVk()"
           >Export all products
+          </button><br>
+          <button v-if="isShowContinueButton()"
+            type="button"
+            class="btn btn-dark"
+            @click="export_AllProductsToVk(true)"
+          >Export products from {{lastExportedProductNumber}} number of {{$store.state.products.length}}
           </button>
-        </div>
+        </div>ow to path
       </div>
     </div>
     <div class="row mt-2" v-else>
@@ -51,7 +57,9 @@ export default {
   `,
       isCaptchaNecessary: false,
       captchaImg: 'https:\\/\\/api.vk.com\\/captcha.php?sid=580204246684&s=1',
-      captchaUserInputKey: ''
+      captchaUserInputKey: '',
+
+      lastExportedProductNumber: 0
     }
   },
   computed: {
@@ -60,6 +68,9 @@ export default {
     }
   },
   methods: {
+    isShowContinueButton () {
+      return ((parseInt(this.lastExportedProductNumber)) > 0) && ((parseInt(this.lastExportedProductNumber) <= this.$store.state.products.length))
+    },
     market_get (count, offset) {
       let methodString = 'market.get'
       let params = {
@@ -256,18 +267,24 @@ export default {
           }
         })
     },
-    export_AllProductsToVk () {
+    export_AllProductsToVk (useLastExportedProductNumber) {
       this.show_export_button = false
       let products = this.$store.state.products
       let productCounter = 0
+      if (useLastExportedProductNumber === true) {
+        productCounter = parseInt(this.lastExportedProductNumber)
+      }
       let marketItemIds = []
       return new Promise(async (resolve) => {
+        // Skip exported products
+        let localCounter = -1
         for (let product of products) {
+          localCounter += 1
+          if (localCounter !== productCounter) {
+            continue
+          }
+
           this.current_product_number = productCounter + 1
-
-          // TODO delet next IF before production
-          // if (productCounter > 3) continue
-
           this.change_title(0)
           this.current_product = product
           console.log(productCounter, product.vendorCode)
@@ -414,35 +431,43 @@ export default {
             }
           }
           this.change_title(100)
-          if (productCounter > 1000000000000000) {
+          if (productCounter > 10000000000) {
             await this.pause(1000000000)
           } else {
             await this.pause(this.sleeping_period)
           }
           this.logCurrentAction() // очистить лог.
+          this.saveLastExportedProductNumber(productCounter)
           productCounter += 1
         }
         resolve(marketItemIds)
       })
         .then(async (marketItemIds) => {
-          console.log(marketItemIds)
-          let allProductIds = await this.get_all_product_ids()
-          console.log(allProductIds)
-          let productIdsForDelete = await this.get_bad_products_ids2(allProductIds, marketItemIds)
-          await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
-          for (let product in productIdsForDelete) {
-            await this.logCurrentAction()
-            let productDeleteResult = await this.market_delete(productIdsForDelete[product])
-            await this.pause(this.sleeping_period)
-            if (productDeleteResult.error) {
-              await this.logCurrentAction(productIdsForDelete[product] + ' Ошибка удаления' + this.action_string_separator)
-              console.error(productDeleteResult)
-            } else {
-              await this.logCurrentAction(productIdsForDelete[product] + ' Удален ' + this.action_string_separator)
-              console.log(productIdsForDelete[product] + 'IS DELETED')
+          // do not clear market if export was not full
+          if (marketItemIds.length !== this.$store.state.products.length) {
+            await this.logCurrentAction('Мы получили vk_id не всех товаров, пропускаем процесс удаления неиспользуемых товаров, Когда то тут будет реализован механизм более умной очистки пока мы просто пропускаем этот шаг' + this.action_string_separator)
+          } else {
+            console.log(marketItemIds)
+            let allProductIds = await this.get_all_product_ids()
+            console.log(allProductIds)
+            let productIdsForDelete = await this.get_bad_products_ids2(allProductIds, marketItemIds)
+            await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
+            for (let product in productIdsForDelete) {
+              await this.logCurrentAction()
+              let productDeleteResult = await this.market_delete(productIdsForDelete[product])
+              await this.pause(this.sleeping_period)
+              if (productDeleteResult.error) {
+                await this.logCurrentAction(productIdsForDelete[product] + ' Ошибка удаления' + this.action_string_separator)
+                console.error(productDeleteResult)
+              } else {
+                await this.logCurrentAction(productIdsForDelete[product] + ' Удален ' + this.action_string_separator)
+                console.log(productIdsForDelete[product] + 'IS DELETED')
+              }
             }
           }
+
           console.log('ВЫГРУЗКА ЗАКОНЧЕНА')
+          this.clearLastExportedProductNumber()
           this.logCurrentAction('РАБОТА ВЫПОЛНЕНА')
         })
     },
@@ -754,6 +779,20 @@ export default {
     change_title (perCent) {
       this.progress_bar_per_cent = perCent
       document.title = this.progress_bar + '( ' + this.current_product_number + '/' + this.$store.state.products.length + ' )'
+    },
+    saveLastExportedProductNumber (number) {
+      window.localStorage.setItem('lastExportedProductNumber', number)
+    },
+
+    clearLastExportedProductNumber () {
+      window.localStorage.removeItem('lastExportedProductNumber')
+    }
+  },
+  mounted () {
+    const lastNumber = window.localStorage.getItem('lastExportedProductNumber')
+    if (lastNumber) {
+      this.lastExportedProductNumber = lastNumber
+      console.log('lastNumber', lastNumber)
     }
   }
 }
