@@ -31,6 +31,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 export default {
   name: 'settings_datasource',
   data () {
@@ -123,7 +124,6 @@ export default {
           }
           obj.length = photoCounter
           this.$store.state.photoBase = obj
-          console.log(obj)
           this.isGettingPhotoBaseNow = false
         })
     }

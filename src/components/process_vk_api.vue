@@ -15,7 +15,7 @@
             @click="export_AllProductsToVk(true)"
           >Export products from {{lastExportedProductNumber}} number of {{$store.state.products.length}}
           </button>
-        </div>ow to path
+        </div>
       </div>
     </div>
     <div class="row mt-2" v-else>
@@ -68,6 +68,11 @@ export default {
     }
   },
   methods: {
+    consoleLog () {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(...(Array.from(arguments)))
+      }
+    },
     isShowContinueButton () {
       return ((parseInt(this.lastExportedProductNumber)) > 0) && ((parseInt(this.lastExportedProductNumber) <= this.$store.state.products.length))
     },
@@ -208,7 +213,7 @@ export default {
         let offset = 0
         let allProductIds = []
         for (let i in counter) {
-          console.log('--------->', i)
+          this.consoleLog('--------->', i)
           let marketProducts = await this.market_get(count, offset)
           await this.pause(this.sleeping_period)
           for (let product in marketProducts.response.items) {
@@ -227,15 +232,15 @@ export default {
     },
 
     isProductInMarket (searchString) {
-      console.log('-Is ' + searchString + ' in market?')
+      this.consoleLog('-Is ' + searchString + ' in market?')
       return new Promise(async (resolve) => {
         let searchResult = await this.market_search(searchString)
-        console.log(searchResult)
-        console.log('^^^^^^^^^^^^')
+        this.consoleLog(searchResult)
+        this.consoleLog('^^^^^^^^^^^^')
         resolve(searchResult)
       })
         .then(x => new Promise(resolve => setTimeout(() => {
-          // console.log(this.sleeping_period_text + this.sleeping_period)
+          // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
           resolve(x)
         }, this.sleeping_period)))
         .then(searchResult => {
@@ -245,23 +250,23 @@ export default {
           }
           if (searchResult.response.count === 1) {
             if (searchResult.response.items[0].description.indexOf(searchString) !== -1) {
-              console.log('Is ' + searchString + ' in market? - YES')
+              this.consoleLog('Is ' + searchString + ' in market? - YES')
               this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
               return searchResult.response.items[0].id
             }
             return false
           } else if (searchResult.response.count > 1) {
             for (let itemIndex in searchResult.response.items) {
-              console.log(searchResult.response.items[itemIndex].description.indexOf(searchString))
+              this.consoleLog(searchResult.response.items[itemIndex].description.indexOf(searchString))
               if (searchResult.response.items[itemIndex].description.indexOf(searchString) !== -1) {
-                console.log('Есть в группе. Запуск процесса обновления')
+                this.consoleLog('Есть в группе. Запуск процесса обновления')
                 this.logCurrentAction('Есть в группе. Запуск процесса обновления' + this.action_string_separator)
                 return searchResult.response.items[itemIndex].id
               }
             }
             return false
           } else {
-            console.log('Is ' + searchString + ' in market? - NO')
+            this.consoleLog('Is ' + searchString + ' in market? - NO')
             this.logCurrentAction('Нет в группе. Запуск процесса добавления' + this.action_string_separator)
             return false
           }
@@ -287,14 +292,14 @@ export default {
           this.current_product_number = productCounter + 1
           this.change_title(0)
           this.current_product = product
-          console.log(productCounter, product.vendorCode)
+          this.consoleLog(productCounter, product.vendorCode)
           const searchString = '[' + product.vendorCode + ']'
           let marketItemId = await this.isProductInMarket(searchString)
           this.change_title(8)
           let productPreparedData = await this.prepare_ProductData(productCounter)
           this.change_title(64)
-          console.log('Product data prepared. See below')
-          console.log(productPreparedData)
+          this.consoleLog('Product data prepared. See below')
+          this.consoleLog(productPreparedData)
           if (productPreparedData.main_photo_id === '') { // no photos skip product;
             continue
           }
@@ -305,29 +310,29 @@ export default {
           let photoIds = productPreparedData.photo_ids
           if (marketItemId !== false) {
             marketItemIds.push(marketItemId)
-            console.log('UPDATE PRODUCT! ' + marketItemId)
+            this.consoleLog('UPDATE PRODUCT! ' + marketItemId)
             this.logCurrentAction('Отправляем запрос на изменение товара' + this.action_string_separator)
             let response = await this.market_edit(marketItemId, name, description, price, mainPhotoId, photoIds)
             if (response.response === 1) {
-              console.log('Product updated')
+              this.consoleLog('Product updated')
               this.logCurrentAction('Успешно!' + this.action_string_separator)
             } else {
-              console.log('ERROR')
-              console.log('error_code: ' + response.error.error_code)
+              this.consoleLog('ERROR')
+              this.consoleLog('error_code: ' + response.error.error_code)
               console.error('error_msg: ' + response.error.error_msg)
               if (response.error.error_msg === 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
-                console.log(response.error.request_params[8].value)
-                console.log(response.error.request_params[9].value)
-                console.log('you must to delete photos from base. Start fixin this mistake')
+                this.consoleLog(response.error.request_params[8].value)
+                this.consoleLog(response.error.request_params[9].value)
+                this.consoleLog('you must to delete photos from base. Start fixin this mistake')
                 let badId1 = response.error.request_params[9].value
                 let badId2 = response.error.request_params[10].value
 
                 this.$store.state.badPhotoIds = ((badId1 + ',' + badId2).split(','))
-                console.log(this.$store.state.badPhotoIds)
+                this.consoleLog(this.$store.state.badPhotoIds)
                 this.change_title(8)
                 productPreparedData = await this.prepare_ProductData(productCounter)
-                console.log('Product data prepared. See below')
-                console.log(productPreparedData)
+                this.consoleLog('Product data prepared. See below')
+                this.consoleLog(productPreparedData)
                 if (productPreparedData.main_photo_id === '') { // no photos skip product;
                   continue
                 }
@@ -347,44 +352,44 @@ export default {
             this.change_title(85)
             await this.pause(this.sleeping_period)
             let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
-            console.log('Add this product to album')
+            this.consoleLog('Add this product to album')
             this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
             let addToAlbumResult = await this.market_addToAlbum(marketItemId, AlbumId)
             if (addToAlbumResult.response === 1) {
-              console.log('Product added to album')
+              this.consoleLog('Product added to album')
               this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
             } else if (addToAlbumResult.error.error_code === 1404) {
-              console.log('Already added to this album')
+              this.consoleLog('Already added to this album')
               this.logCurrentAction('Товар уже добавлен в эту подборку' + this.action_string_separator)
             } else {
-              console.log('Error add to album')
+              this.consoleLog('Error add to album')
               this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
             }
             this.change_title(100)
           } else {
-            console.log('ADD PRODUCT!')
+            this.consoleLog('ADD PRODUCT!')
             this.logCurrentAction('Отправляем запрос на добавление товара' + this.action_string_separator)
             let response = await this.market_add(name, description, price, mainPhotoId, photoIds)
             this.change_title(80)
             try {
               if (response.error) {
                 // TODO create error handler function
-                console.log('ERROR')
-                console.log('error_code: ' + response.error.error_code)
+                this.consoleLog('ERROR')
+                this.consoleLog('error_code: ' + response.error.error_code)
                 console.error('error_msg: ' + response.error.error_msg)
                 if (response.error.error_msg === 'One of the parameters specified was missing or invalid: photo not found or already assigned to another item') {
-                  console.log(response.error.request_params[8].value)
-                  console.log(response.error.request_params[9].value)
-                  console.log('you must to delete photos from base. Start fixin this mistake')
+                  this.consoleLog(response.error.request_params[8].value)
+                  this.consoleLog(response.error.request_params[9].value)
+                  this.consoleLog('you must to delete photos from base. Start fixin this mistake')
                   let badId1 = response.error.request_params[8].value
                   let badId2 = response.error.request_params[9].value
 
                   this.$store.state.badPhotoIds = ((badId1 + ',' + badId2).split(','))
-                  console.log(this.$store.state.badPhotoIds)
+                  this.consoleLog(this.$store.state.badPhotoIds)
                   this.change_title(8)
                   productPreparedData = await this.prepare_ProductData(productCounter)
-                  console.log('Product data prepared. See below')
-                  console.log(productPreparedData)
+                  this.consoleLog('Product data prepared. See below')
+                  this.consoleLog(productPreparedData)
                   if (productPreparedData.main_photo_id === '') { // no photos skip product;
                     continue
                   }
@@ -399,25 +404,25 @@ export default {
 
               if (response.error) {
                 // TODO create error handler function
-                console.log('ERROR')
-                console.log('error_code: ' + response.error.error_msg)
+                this.consoleLog('ERROR')
+                this.consoleLog('error_code: ' + response.error.error_msg)
               }
 
               if (response.response.market_item_id) {
                 marketItemIds.push(response.response.market_item_id)
-                console.log('Product added')
+                this.consoleLog('Product added')
                 this.logCurrentAction('Успешно!' + this.action_string_separator)
                 await this.pause(this.sleeping_period)
                 let AlbumId = this.$store.state.CategoryToAlbumId[product.categoryId]
                 let marketItemId = response.response.market_item_id
-                console.log('Add this product to album')
+                this.consoleLog('Add this product to album')
                 this.logCurrentAction('Дoбавляем данный товар в подбоку' + this.action_string_separator)
                 let addToAlbumResult = await this.market_addToAlbum(marketItemId, AlbumId)
                 if (addToAlbumResult.response === 1) {
-                  console.log('Product added to album')
+                  this.consoleLog('Product added to album')
                   this.logCurrentAction('Успешно добавлен в подборку!' + this.action_string_separator)
                 } else {
-                  console.log('Error add to album')
+                  this.consoleLog('Error add to album')
                   this.logCurrentAction('Oшибка: товар не добавлен в подборку!' + this.action_string_separator)
                 }
               } else {
@@ -425,7 +430,7 @@ export default {
                 this.logCurrentAction('Oшибка: товар не добавлен!' + this.action_string_separator)
               }
             } catch (error) {
-              console.log('Catch Error')
+              this.consoleLog('Catch Error')
               console.error(error)
               this.logCurrentAction('Критическая ошибка: ' + this.action_string_separator)
             }
@@ -447,9 +452,9 @@ export default {
           if (marketItemIds.length !== this.$store.state.products.length) {
             await this.logCurrentAction('Мы получили vk_id не всех товаров, пропускаем процесс удаления неиспользуемых товаров, Когда то тут будет реализован механизм более умной очистки пока мы просто пропускаем этот шаг' + this.action_string_separator)
           } else {
-            console.log(marketItemIds)
+            this.consoleLog(marketItemIds)
             let allProductIds = await this.get_all_product_ids()
-            console.log(allProductIds)
+            this.consoleLog(allProductIds)
             let productIdsForDelete = await this.get_bad_products_ids2(allProductIds, marketItemIds)
             await this.logCurrentAction('Удаляем товары снятые с продажи:' + this.action_string_separator)
             for (let product in productIdsForDelete) {
@@ -461,12 +466,12 @@ export default {
                 console.error(productDeleteResult)
               } else {
                 await this.logCurrentAction(productIdsForDelete[product] + ' Удален ' + this.action_string_separator)
-                console.log(productIdsForDelete[product] + 'IS DELETED')
+                this.consoleLog(productIdsForDelete[product] + 'IS DELETED')
               }
             }
           }
 
-          console.log('ВЫГРУЗКА ЗАКОНЧЕНА')
+          this.consoleLog('ВЫГРУЗКА ЗАКОНЧЕНА')
           this.clearLastExportedProductNumber()
           this.logCurrentAction('РАБОТА ВЫПОЛНЕНА')
         })
@@ -474,7 +479,7 @@ export default {
 
     get_bad_products_ids2 (allProductIds, marketItemIds) {
       let difference = allProductIds.filter(x => !marketItemIds.includes(x))
-      console.log(difference)
+      this.consoleLog(difference)
       return difference
     },
 
@@ -527,7 +532,7 @@ export default {
               }
               photoIds += separator + await this.get_photo_id(item, vendorCode)
             } else {
-              console.log('break')
+              this.consoleLog('break')
               break
             }
           }
@@ -573,7 +578,7 @@ export default {
         return productsName
       }
       let nameParts = productsName.split(' ')
-      console.log('---->NAME PARTS', nameParts)
+      this.consoleLog('---->NAME PARTS', nameParts)
       let newName = ''
       nameParts.every((part) => {
         if ((newName + ' ' + part).length < 100) {
@@ -586,29 +591,29 @@ export default {
     },
 
     upload_photoToVkGroupCommonMethod (fileLink, vendorCode) {
-      console.log('----------------------------------------')
-      console.log('Uploading new photo')
+      this.consoleLog('----------------------------------------')
+      this.consoleLog('Uploading new photo')
       this.logCurrentAction('Loading photo: ')
       return new Promise(async (resolve, reject) => {
-        console.log('Getting Upload Server')
+        this.consoleLog('Getting Upload Server')
         // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer()
         this.logCurrentAction('✓')
         resolve(response)
       })
         .then(x => new Promise(resolve => setTimeout(() => {
-          // console.log(this.sleeping_period_text + this.sleeping_period)
+          // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
           resolve(x)
         }, this.sleeping_period)))
         .then(async (result) => {
           // TODO make reject scenario
-          console.log('Uploading photo to server')
+          this.consoleLog('Uploading photo to server')
           this.logCurrentAction('✓')
           let response = await this.upload_file(result.response.upload_url, fileLink)
           return response
         })
         .then(x => new Promise(resolve => setTimeout(() => {
-          // console.log(this.sleeping_period_text + this.sleeping_period)
+          // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
           resolve(x)
         }, this.sleeping_period)))
         .then(async (uploadedFileInfo) => {
@@ -618,29 +623,29 @@ export default {
           let cropData = uploadedFileInfo.crop_data
           let cropHash = uploadedFileInfo.crop_hash
           // TODO make reject scenario
-          console.log('Saving uploaded photo')
+          this.consoleLog('Saving uploaded photo')
           this.logCurrentAction('✓')
           let response = await this.photos_saveMarketPhoto(photo, server, hash, cropData, cropHash)
           return response
         })
         .then(x => new Promise(resolve => setTimeout(() => {
-          // console.log(this.sleeping_period_text + this.sleeping_period)
+          // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
           resolve(x)
         }, this.sleeping_period)))
         .then(savedPhotoInfo => {
           let photoId = savedPhotoInfo.response[0].id
           this.logCurrentAction('OK' + this.action_string_separator)
-          console.log('-----update_PhotoBase-----------')
-          console.log(fileLink, photoId, vendorCode)
+          this.consoleLog('-----update_PhotoBase-----------')
+          this.consoleLog(fileLink, photoId, vendorCode)
 
           let resultOfPhotoBaseUpdate = this.update_PhotoBase(fileLink, photoId, vendorCode)
-          console.log('resultOfPhotoBaseUpdate', resultOfPhotoBaseUpdate)
+          this.consoleLog('resultOfPhotoBaseUpdate', resultOfPhotoBaseUpdate)
           return photoId
         })
         .catch(async (error) => {
-          console.log('^^^^^^^^^^^^^^^')
+          this.consoleLog('^^^^^^^^^^^^^^^')
           console.error(error)
-          console.log('ERROR UPLOADING PHOTO: Skip this link')
+          this.consoleLog('ERROR UPLOADING PHOTO: Skip this link')
           this.logCurrentAction(this.action_string_separator + 'Ошибка загрузки фото. Пропускаем данную ссылку.' + this.action_string_separator)
           // let response = await this.upload_photoToVkGroupCommonMethod(file_link)
           return ''
@@ -649,7 +654,7 @@ export default {
 
     sendCaptcha () {
       this.isCaptchaNecessary = false
-      console.log('capcha done')
+      this.consoleLog('capcha done')
     },
 
     changeCaptchaTitle () {
@@ -688,7 +693,7 @@ export default {
           response: json
         }
 
-        console.log(this.response_text)
+        this.consoleLog(this.response_text)
 
         if (this.isResponseHasCaptcha(json)) { // capcha handling
           this.isCaptchaNecessary = true
@@ -700,26 +705,26 @@ export default {
           }
 
           while (this.isCaptchaNecessary) {
-            console.log('ждем captcha')
+            this.consoleLog('ждем captcha')
             this.changeCaptchaTitle()
             await this.pause(1000)
           }
           params.captcha_key = this.captchaUserInputKey
-          console.log('captcha got retry request with  this params')
-          console.log(params)
-          console.log('-------------------------------------------')
+          this.consoleLog('captcha got retry request with  this params')
+          this.consoleLog(params)
+          this.consoleLog('-------------------------------------------')
           json = this._onwApi_call(method, params)
         }
         return json
       })
         .catch(async (error) => {
-          console.log('^^^^^^^^^^^^^^^')
-          console.log(error)
-          console.log('^^^^^^^метод^^^^^^')
-          console.log(method)
-          console.log('^^^^^параметры^^^^^^')
-          console.log(params)
-          console.log('ERROR API CALL: RETRY')
+          this.consoleLog('^^^^^^^^^^^^^^^')
+          this.consoleLog(error)
+          this.consoleLog('^^^^^^^метод^^^^^^')
+          this.consoleLog(method)
+          this.consoleLog('^^^^^параметры^^^^^^')
+          this.consoleLog(params)
+          this.consoleLog('ERROR API CALL: RETRY')
           if (method === 'upload_file') {
             if (!params.file_link) {
               console.error('BROKEN UPLOAD FILE; EXIT')
@@ -743,11 +748,11 @@ export default {
 
     pause (pausePeriod) {
       return new Promise(async (resolve) => {
-        console.log('Pause ' + pausePeriod + ' ms began')
+        this.consoleLog('Pause ' + pausePeriod + ' ms began')
         setTimeout(() => resolve('Pause end'), pausePeriod)
       })
         .then(pauseEndMessage => {
-          console.log(pauseEndMessage)
+          this.consoleLog(pauseEndMessage)
           return pauseEndMessage
         })
     },
@@ -792,7 +797,6 @@ export default {
     const lastNumber = window.localStorage.getItem('lastExportedProductNumber')
     if (lastNumber) {
       this.lastExportedProductNumber = lastNumber
-      console.log('lastNumber', lastNumber)
     }
   }
 }
