@@ -1,10 +1,10 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import Home from '@/components/home'
-import Settings from '@/components/settings'
-import Process from '@/components/process'
+import Vue from 'vue';
+import Router from 'vue-router';
+import Home from '@/components/home';
+import Settings from '@/components/settings';
+import Process from '@/components/process';
 
-Vue.use(Router)
+Vue.use(Router);
 
 export default new Router({
   routes: [
@@ -25,4 +25,4 @@ export default new Router({
     }
   ]
   // mode: 'history'
-})
+});
