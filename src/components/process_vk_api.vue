@@ -1005,14 +1005,26 @@ export default {
     },
     saveLastExportedProductNumber(number) {
       window.localStorage.setItem('lastExportedProductNumber', number);
+      this.saveLastNumberOnServer(number);
+    },
+
+    saveLastNumberOnServer(number) {
+      let methodString = 'saveLastNumber';
+      let params = {
+        lastNumber: number
+      };
+      return this._onwApi_call(methodString, params);
     },
 
     clearLastExportedProductNumber() {
       window.localStorage.removeItem('lastExportedProductNumber');
+      this.saveLastNumberOnServer(0);
     }
   },
   mounted() {
-    const lastNumber = window.localStorage.getItem('lastExportedProductNumber');
+    const lastNumber = parseInt(
+      window.localStorage.getItem('lastExportedProductNumber')
+    );
     if (lastNumber) {
       this.lastExportedProductNumber = lastNumber;
     }

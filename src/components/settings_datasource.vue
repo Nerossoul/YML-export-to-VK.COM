@@ -172,6 +172,7 @@ export default {
         })
         .then(obj => {
           console.log(obj);
+          window.localStorage.setItem('lastExportedProductNumber', obj);
         })
         .catch(e => {
           console.log('GOT ERROR', e);
