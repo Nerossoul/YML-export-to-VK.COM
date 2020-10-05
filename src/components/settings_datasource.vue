@@ -18,7 +18,9 @@
               name="button"
               class="btn btn-dark"
               @click="getData"
-            >Получить данные</button>
+            >
+              Получить данные
+            </button>
           </div>
         </div>
       </div>
@@ -28,13 +30,16 @@
         <h5 class="card-title">Текущие данные от {{ sourceDate }}:</h5>
         <p class="card-text">Категории: {{ categories.length }}</p>
         <p class="card-text">Товары: {{ products.length }}</p>
-        <p class="card-text">Товаров с предзагруженными фотографиями: {{ photoBaseObj.length }}</p>
+        <p class="card-text">
+          Товаров с предзагруженными фотографиями: {{ photoBaseObj.length }}
+        </p>
         <router-link
           tag="button"
           type="button"
           class="btn btn-dark"
           to="/process"
-        >Go to Process room</router-link>
+          >Go to Process room</router-link
+        >
       </div>
     </div>
   </div>
@@ -46,7 +51,7 @@ export default {
 
   data() {
     return {
-      // TODO: ymlSourceLink must be user setable and saved to localstorege
+      // TODO: ymlSourceLink must be user setable and saved to localstorage
       ymlSource: 'https://playavto.ru/export/yandex_yml.xml',
       photoBaseSource:
         'https://playavto.ru/vk_export/static/api/photobase.json',
@@ -99,13 +104,15 @@ export default {
     getXmlData() {
       let context = this;
       fetch(this.ymlSource + '?timestamp=' + new Date().getTime())
-        .then(resp => {
+        .then((resp) => {
           return resp.text();
         })
-        .then(function(data) {
+        // eslint-disable-next-line
+        .then(function (data) {
           context.xmlObj = context.x2js.xml_str2json(data);
         })
-        .then(function() {
+        // eslint-disable-next-line
+        .then(function () {
           context.isGettingDataNow = false;
         });
     },
@@ -119,7 +126,7 @@ export default {
         this.photoBaseSource + '?timestamp=' + new Date().getTime(),
         fetchOptions
       )
-        .then(response => {
+        .then((response) => {
           // console.log (response)
           if (!response.ok) {
             console.log('HTTP error, status = ' + response.status);
@@ -128,7 +135,7 @@ export default {
           // console.log('Good response')
           return response.json();
         })
-        .then(json => {
+        .then((json) => {
           // console.log(json)
           if (typeof json === 'object') {
             return json;
@@ -136,7 +143,7 @@ export default {
             return JSON.parse(json);
           }
         })
-        .then(obj => {
+        .then((obj) => {
           obj.length = Object.keys(obj).length;
           this.$store.state.photoBase = obj;
           this.isGettingPhotoBaseNow = false;
@@ -153,7 +160,7 @@ export default {
         this.lastProductNumber + '?timestamp=' + new Date().getTime(),
         fetchOptions
       )
-        .then(response => {
+        .then((response) => {
           // console.log (response)
           if (!response.ok) {
             console.log('HTTP error, status = ' + response.status);
@@ -162,7 +169,7 @@ export default {
           // console.log('Good response')
           return response.json();
         })
-        .then(json => {
+        .then((json) => {
           // console.log(json)
           if (typeof json === 'object') {
             return json;
@@ -170,16 +177,16 @@ export default {
             return JSON.parse(json);
           }
         })
-        .then(obj => {
+        .then((obj) => {
           console.log(obj);
           window.localStorage.setItem('lastExportedProductNumber', obj);
         })
-        .catch(e => {
+        .catch((e) => {
           console.log('GOT ERROR', e);
         });
     }
   },
-  mounted: function() {
+  mounted() {
     // eslint-disable-next-line no-undef
     this.x2js = new X2JS();
   }

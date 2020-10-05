@@ -3,15 +3,15 @@
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Авторизация в контакте:</h5>
-        <div v-if="this.$store.state.access_token == 'no_token'">
+        <div v-if="this.$store.state.access_token === 'no_token'">
           Вы не авторизованы!!!
           <br />
           <a
             type="button"
             :href="user_auth_link_to_get_code"
-            name="button"
             class="btn btn-dark"
-          >Авторизоваться</a>
+            >Авторизоваться</a
+          >
           <br />
         </div>
         <div v-else>
@@ -41,7 +41,6 @@ export default {
       client_id: '6897290',
       display: 'popup',
       redirect_uri: process.env.REDIRECT_URL,
-
       response_type: 'code',
       scope: 134479876,
       v: 5.92
@@ -71,7 +70,7 @@ export default {
       this.$store.state.group_id = this.localGroupId;
     }
   },
-  mounted: function() {
+  mounted: function () {
     if (typeof this.$route.query.access_token != 'undefined') {
       this.$store.state.access_token = this.$route.query.access_token;
       this.$router.push('/settings');

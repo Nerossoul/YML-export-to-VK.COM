@@ -7,7 +7,9 @@
             type="button"
             class="btn btn-dark"
             @click="export_AllProductsToVk()"
-          >Export all products</button>
+          >
+            Export all products
+          </button>
           <br />
           <button
             v-if="isShowContinueButton()"
@@ -28,13 +30,19 @@
           <span class="pl-3">{{ current_product.name }}</span>
           <div v-if="isCaptchaNecessary">
             <h4>Требуется ввести каптчу</h4>
-            <img :src="captchaImg" alt border="1" />
-            <input type="text" placeholder="Введите текст с картинки" v-model="captchaUserInputKey" />
+            <img :src="captchaImg" alt />
+            <label>
+              <input
+                type="text"
+                placeholder="Введите текст с картинки"
+                v-model="captchaUserInputKey"
+              />
+            </label>
             <button @click="sendCaptcha()">Go</button>
           </div>
           <hr />
           <h5 class="pl-3">Progress text</h5>
-          <p class="pl-3" style="white-space: pre-line;">{{ action_string }}</p>
+          <p class="pl-3" style="white-space: pre-line">{{ action_string }}</p>
         </div>
       </div>
     </div>
@@ -219,13 +227,13 @@ export default {
     },
 
     get_all_product_ids() {
-      return new Promise(async resolve => {
+      return new Promise(async (resolve) => {
         let counter = Array.from(Array(75).keys());
         let count = 200;
         let offset = 0;
         let allProductIds = [];
         for (let i in counter) {
-          this.consoleLog('--------->', i);
+          this.consoleLog(228, 'get_all_product_ids', i);
           let marketProducts = await this.market_get(count, offset);
           await this.pause(this.sleeping_period);
           for (let product in marketProducts.response.items) {
@@ -237,29 +245,29 @@ export default {
           }
         }
         resolve(allProductIds);
-      }).then(result => {
+      }).then((result) => {
         return result;
       });
     },
 
     isProductInMarket(searchString) {
-      this.consoleLog('-Is ' + searchString + ' in market?');
-      return new Promise(async resolve => {
+      this.consoleLog(246, '-Is ' + searchString + ' in market?');
+      return new Promise(async (resolve) => {
         let searchResult = await this.market_search(searchString);
-        this.consoleLog(searchResult);
+        this.consoleLog(249, searchResult);
         this.consoleLog('^^^^^^^^^^^^');
         resolve(searchResult);
       })
         .then(
-          x =>
-            new Promise(resolve =>
+          (x) =>
+            new Promise((resolve) =>
               setTimeout(() => {
                 // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
                 resolve(x);
               }, this.sleeping_period)
             )
         )
-        .then(searchResult => {
+        .then((searchResult) => {
           if (searchResult.error) {
             console.error('Search in market ERROR');
             console.error(searchResult);
@@ -316,13 +324,18 @@ export default {
       if (useLastExportedProductNumber === true) {
         productCounter = parseInt(this.lastExportedProductNumber);
       }
+      // TODO delete next string before production
+      // productCounter = 2225;
       let marketItemIds = [];
-      return new Promise(async resolve => {
+      return new Promise(async (resolve) => {
         // Skip exported products
         let localCounter = -1;
         for (let product of products) {
           localCounter += 1;
+          console.log();
           if (localCounter !== productCounter) {
+            console.error('localCounter !== productCounter');
+            console.error(localCounter, '!==', productCounter);
             continue;
           }
 
@@ -340,7 +353,9 @@ export default {
           this.consoleLog('Product data prepared. See below');
           this.consoleLog(productPreparedData);
           if (productPreparedData.main_photo_id === '') {
-            // no photos skip product;
+            console.error('no photo skip product');
+            await this.pause(1000);
+            productCounter += 1;
             continue;
           }
           let name = productPreparedData.name;
@@ -393,7 +408,9 @@ export default {
                 this.consoleLog('Product data prepared. See below');
                 this.consoleLog(productPreparedData);
                 if (productPreparedData.main_photo_id === '') {
-                  // no photos skip product;
+                  console.error('no photo skip product');
+                  await this.pause(1000);
+                  productCounter += 1;
                   continue;
                 }
                 let name = productPreparedData.name;
@@ -494,7 +511,9 @@ export default {
                   this.consoleLog('Product data prepared. See below');
                   this.consoleLog(productPreparedData);
                   if (productPreparedData.main_photo_id === '') {
-                    // no photos skip product;
+                    console.error('no photo skip product');
+                    await this.pause(1000);
+                    productCounter += 1;
                     continue;
                   }
                   let name = productPreparedData.name;
@@ -568,6 +587,7 @@ export default {
           }
           this.change_title(100);
           if (productCounter > 10000000000) {
+            console.log('INFINITY PAUSE');
             await this.pause(1000000000);
           } else {
             await this.pause(this.sleeping_period);
@@ -576,8 +596,9 @@ export default {
           this.saveLastExportedProductNumber(productCounter);
           productCounter += 1;
         }
+        console.log('UPLOAD PRODUCTS LOOP FINISHED');
         resolve(marketItemIds);
-      }).then(async marketItemIds => {
+      }).then(async (marketItemIds) => {
         // do not clear market if export was not full
         if (marketItemIds.length !== this.$store.state.products.length) {
           await this.logCurrentAction(
@@ -626,13 +647,13 @@ export default {
     },
 
     get_bad_products_ids2(allProductIds, marketItemIds) {
-      let difference = allProductIds.filter(x => !marketItemIds.includes(x));
+      let difference = allProductIds.filter((x) => !marketItemIds.includes(x));
       this.consoleLog(difference);
       return difference;
     },
 
     get_photo_id(fileLink, vendorCode) {
-      return new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve) => {
         let photoId = '';
         if (
           this.$store.state.photoBase[vendorCode] &&
@@ -650,13 +671,13 @@ export default {
           );
         }
         resolve(photoId);
-      }).then(photoId => {
+      }).then((photoId) => {
         return photoId;
       });
     },
 
     prepare_ProductData(arrayIndex) {
-      return new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve) => {
         this.logCurrentAction(
           'Формируем запрос' + this.action_string_separator
         );
@@ -668,6 +689,7 @@ export default {
           console.error(productPhotoUrls);
           console.error("This product don't have photos, SKIP...");
           console.error('---------------');
+          await this.pause(1000);
           resolve(['', '']);
         }
         let photoCounter = 0;
@@ -697,7 +719,7 @@ export default {
           mainPhotoId = await this.get_photo_id(productPhotoUrls, vendorCode);
           resolve([mainPhotoId, '']);
         }
-      }).then(photoIdArray => {
+      }).then((photoIdArray) => {
         this.prepared_product_data = this.$store.state.products[arrayIndex];
         let onStore =
           'НЕТ. Товар в пути. НАПИШИТЕ ПРОДАВЦУ что бы узнать дату поступления на склад.';
@@ -750,7 +772,7 @@ export default {
       let nameParts = productsName.split(' ');
       this.consoleLog('---->NAME PARTS', nameParts);
       let newName = '';
-      nameParts.every(part => {
+      nameParts.every((part) => {
         if ((newName + ' ' + part).length < 100) {
           newName += ' ' + part;
           return true;
@@ -764,7 +786,7 @@ export default {
       this.consoleLog('----------------------------------------');
       this.consoleLog('Uploading new photo');
       this.logCurrentAction('Loading photo: ');
-      return new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve) => {
         this.consoleLog('Getting Upload Server');
         // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer();
@@ -772,34 +794,34 @@ export default {
         resolve(response);
       })
         .then(
-          x =>
-            new Promise(resolve =>
+          (x) =>
+            new Promise((resolve) =>
               setTimeout(() => {
                 // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
                 resolve(x);
               }, this.sleeping_period)
             )
         )
-        .then(async result => {
+        .then(async (result) => {
           // TODO make reject scenario
           this.consoleLog('Uploading photo to server');
           this.logCurrentAction('✓');
-          let response = await this.upload_file(
+          // eslint-disable-next-line no-return-await
+          return await this.upload_file(
             result.response.upload_url,
             fileLink
           );
-          return response;
         })
         .then(
-          x =>
-            new Promise(resolve =>
+          (x) =>
+            new Promise((resolve) =>
               setTimeout(() => {
                 // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
                 resolve(x);
               }, this.sleeping_period)
             )
         )
-        .then(async uploadedFileInfo => {
+        .then(async (uploadedFileInfo) => {
           let photo = uploadedFileInfo.photo;
           let server = uploadedFileInfo.server;
           let hash = uploadedFileInfo.hash;
@@ -808,39 +830,45 @@ export default {
           // TODO make reject scenario
           this.consoleLog('Saving uploaded photo');
           this.logCurrentAction('✓');
-          let response = await this.photos_saveMarketPhoto(
+          // eslint-disable-next-line no-return-await
+          return await this.photos_saveMarketPhoto(
             photo,
             server,
             hash,
             cropData,
             cropHash
           );
-          return response;
         })
         .then(
-          x =>
-            new Promise(resolve =>
+          (x) =>
+            new Promise((resolve) =>
               setTimeout(() => {
                 // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
                 resolve(x);
               }, this.sleeping_period)
             )
         )
-        .then(savedPhotoInfo => {
-          let photoId = savedPhotoInfo.response[0].id;
-          this.logCurrentAction('OK' + this.action_string_separator);
-          this.consoleLog('-----update_PhotoBase-----------');
-          this.consoleLog(fileLink, photoId, vendorCode);
+        .then((savedPhotoInfo) => {
+          if (savedPhotoInfo.response) {
+            const photoId = savedPhotoInfo.response[0].id;
+            this.logCurrentAction('OK' + this.action_string_separator);
+            this.consoleLog('-----update_PhotoBase-----------');
+            this.consoleLog(fileLink, photoId, vendorCode);
 
-          let resultOfPhotoBaseUpdate = this.update_PhotoBase(
-            fileLink,
-            photoId,
-            vendorCode
-          );
-          this.consoleLog('resultOfPhotoBaseUpdate', resultOfPhotoBaseUpdate);
-          return photoId;
+            let resultOfPhotoBaseUpdate = this.update_PhotoBase(
+              fileLink,
+              photoId,
+              vendorCode
+            );
+            this.consoleLog('resultOfPhotoBaseUpdate', resultOfPhotoBaseUpdate);
+            return photoId;
+          } else {
+            console.error('ПРОВЕРЬ ЧТО НЕ ТАК С ОТВЕТОМ НИЖЕ');
+            console.log(savedPhotoInfo);
+            return '';
+          }
         })
-        .catch(async error => {
+        .catch(async (error) => {
           this.consoleLog('^^^^^^^^^^^^^^^');
           console.error(error);
           this.consoleLog('ERROR UPLOADING PHOTO: Skip this link');
@@ -867,10 +895,7 @@ export default {
     },
 
     isResponseHasCaptcha(response) {
-      if (response.error && response.error.error_code === 14) {
-        return true;
-      }
-      return false;
+      return !!(response.error && response.error.error_code === 14);
     },
 
     _onwApi_call(method, params) {
@@ -886,11 +911,11 @@ export default {
         mode: 'cors',
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
       })
-        .then(result => {
+        .then((result) => {
           return result.json();
           // return result.text()
         })
-        .then(async json => {
+        .then(async (json) => {
           if (typeof json !== 'object') {
             json = JSON.parse(json);
           }
@@ -925,7 +950,7 @@ export default {
           }
           return json;
         })
-        .catch(async error => {
+        .catch(async (error) => {
           this.consoleLog('^^^^^^^^^^^^^^^');
           this.consoleLog(error);
           this.consoleLog('^^^^^^^метод^^^^^^');
@@ -958,11 +983,13 @@ export default {
     },
 
     pause(pausePeriod) {
-      return new Promise(async resolve => {
+      const startTime = performance.now();
+      return new Promise(async (resolve) => {
         this.consoleLog('Pause ' + pausePeriod + ' ms began');
         setTimeout(() => resolve('Pause end'), pausePeriod);
-      }).then(pauseEndMessage => {
+      }).then((pauseEndMessage) => {
         this.consoleLog(pauseEndMessage);
+        console.error(performance.now() - startTime - pausePeriod);
         return pauseEndMessage;
       });
     },
