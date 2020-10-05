@@ -57,7 +57,7 @@ export default {
       show_export_button: true,
       ownApiServer: process.env.OWN_API_SERVER,
       response_text: '',
-      sleeping_period: 400,
+      sleeping_period: 334,
       sleeping_period_text: '⏸️️ Pause end. (ms)-',
       prepared_product_data: {},
       current_product: {},
@@ -260,12 +260,10 @@ export default {
       })
         .then(
           (x) =>
-            new Promise((resolve) =>
-              setTimeout(() => {
-                // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
-                resolve(x);
-              }, this.sleeping_period)
-            )
+            new Promise(async (resolve) => {
+              await this.pause(this.sleeping_period);
+              resolve(x);
+            })
         )
         .then((searchResult) => {
           if (searchResult.error) {
@@ -279,10 +277,6 @@ export default {
               ) !== -1
             ) {
               this.consoleLog('Is ' + searchString + ' in market? - YES');
-              this.logCurrentAction(
-                'Есть в группе. Запуск процесса обновления' +
-                  this.action_string_separator
-              );
               return searchResult.response.items[0].id;
             }
             return false;
@@ -299,10 +293,6 @@ export default {
                 ) !== -1
               ) {
                 this.consoleLog('Есть в группе. Запуск процесса обновления');
-                this.logCurrentAction(
-                  'Есть в группе. Запуск процесса обновления' +
-                    this.action_string_separator
-                );
                 return searchResult.response.items[itemIndex].id;
               }
             }
@@ -324,24 +314,27 @@ export default {
       if (useLastExportedProductNumber === true) {
         productCounter = parseInt(this.lastExportedProductNumber);
       }
-      // TODO delete next string before production
-      // productCounter = 2225;
       let marketItemIds = [];
       return new Promise(async (resolve) => {
         // Skip exported products
         let localCounter = -1;
         for (let product of products) {
+          this.current_product = product;
           localCounter += 1;
-          console.log();
           if (localCounter !== productCounter) {
-            console.error('localCounter !== productCounter');
-            console.error(localCounter, '!==', productCounter);
-            continue;
+            console.error('Skip');
+            const searchString = '[' + product.vendorCode + ']';
+            const marketItemId = await this.isProductInMarket(searchString);
+            this.logCurrentAction('.');
+            if (marketItemId !== false) {
+              marketItemIds.push(marketItemId);
+              continue;
+            }
           }
 
           this.current_product_number = productCounter + 1;
           this.change_title(0);
-          this.current_product = product;
+
           this.consoleLog(productCounter, product.vendorCode);
           const searchString = '[' + product.vendorCode + ']';
           let marketItemId = await this.isProductInMarket(searchString);
@@ -364,6 +357,10 @@ export default {
           let mainPhotoId = productPreparedData.main_photo_id;
           let photoIds = productPreparedData.photo_ids;
           if (marketItemId !== false) {
+            this.logCurrentAction(
+              'Есть в группе. Запуск процесса обновления' +
+                this.action_string_separator
+            );
             marketItemIds.push(marketItemId);
             this.consoleLog('UPDATE PRODUCT! ' + marketItemId);
             this.logCurrentAction(
@@ -462,6 +459,7 @@ export default {
               );
             } else {
               this.consoleLog('Error add to album');
+              this.consoleLog(addToAlbumResult);
               this.logCurrentAction(
                 'Oшибка: товар не добавлен в подборку!' +
                   this.action_string_separator
@@ -516,11 +514,11 @@ export default {
                     productCounter += 1;
                     continue;
                   }
-                  let name = productPreparedData.name;
-                  let description = productPreparedData.description;
-                  let price = productPreparedData.price;
-                  let mainPhotoId = productPreparedData.main_photo_id;
-                  let photoIds = productPreparedData.photo_ids;
+                  const name = productPreparedData.name;
+                  const description = productPreparedData.description;
+                  const price = productPreparedData.price;
+                  const mainPhotoId = productPreparedData.main_photo_id;
+                  const photoIds = productPreparedData.photo_ids;
                   response = await this.market_add(
                     name,
                     description,
@@ -566,6 +564,7 @@ export default {
                   );
                 } else {
                   this.consoleLog('Error add to album');
+                  this.consoleLog(addToAlbumResult);
                   this.logCurrentAction(
                     'Oшибка: товар не добавлен в подборку!' +
                       this.action_string_separator
@@ -599,44 +598,40 @@ export default {
         console.log('UPLOAD PRODUCTS LOOP FINISHED');
         resolve(marketItemIds);
       }).then(async (marketItemIds) => {
-        // do not clear market if export was not full
-        if (marketItemIds.length !== this.$store.state.products.length) {
-          await this.logCurrentAction(
-            'Мы получили vk_id не всех товаров, пропускаем процесс удаления неиспользуемых товаров, Когда то тут будет реализован механизм более умной очистки пока мы просто пропускаем этот шаг' +
-              this.action_string_separator
+        this.consoleLog(marketItemIds);
+        this.logCurrentAction(
+          'Подготавливаем группу к очистке от несуществующих товаров' +
+            this.action_string_separator
+        );
+        let allProductIds = await this.get_all_product_ids();
+        this.consoleLog(allProductIds);
+        let productIdsForDelete = await this.get_bad_products_ids2(
+          allProductIds,
+          marketItemIds
+        );
+        this.logCurrentAction(
+          'Удаляем товары снятые с продажи:' + this.action_string_separator
+        );
+        for (let product in productIdsForDelete) {
+          let productDeleteResult = await this.market_delete(
+            productIdsForDelete[product]
           );
-        } else {
-          this.consoleLog(marketItemIds);
-          let allProductIds = await this.get_all_product_ids();
-          this.consoleLog(allProductIds);
-          let productIdsForDelete = await this.get_bad_products_ids2(
-            allProductIds,
-            marketItemIds
-          );
-          await this.logCurrentAction(
-            'Удаляем товары снятые с продажи:' + this.action_string_separator
-          );
-          for (let product in productIdsForDelete) {
-            await this.logCurrentAction();
-            let productDeleteResult = await this.market_delete(
-              productIdsForDelete[product]
+          await this.pause(this.sleeping_period);
+          this.logCurrentAction();
+          if (productDeleteResult.error) {
+            await this.logCurrentAction(
+              productIdsForDelete[product] +
+                ' Ошибка удаления' +
+                this.action_string_separator
             );
-            await this.pause(this.sleeping_period);
-            if (productDeleteResult.error) {
-              await this.logCurrentAction(
-                productIdsForDelete[product] +
-                  ' Ошибка удаления' +
-                  this.action_string_separator
-              );
-              console.error(productDeleteResult);
-            } else {
-              await this.logCurrentAction(
-                productIdsForDelete[product] +
-                  ' Удален ' +
-                  this.action_string_separator
-              );
-              this.consoleLog(productIdsForDelete[product] + 'IS DELETED');
-            }
+            console.error(productDeleteResult);
+          } else {
+            this.logCurrentAction(
+              productIdsForDelete[product] +
+                ' Удален ' +
+                this.action_string_separator
+            );
+            this.consoleLog(productIdsForDelete[product] + ' IS DELETED');
           }
         }
 
@@ -791,35 +786,22 @@ export default {
         // TODO make reject scenario
         let response = await this.photos_getMarketUploadServer();
         this.logCurrentAction('✓');
+        await this.pause(this.sleeping_period);
         resolve(response);
       })
-        .then(
-          (x) =>
-            new Promise((resolve) =>
-              setTimeout(() => {
-                // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
-                resolve(x);
-              }, this.sleeping_period)
-            )
-        )
         .then(async (result) => {
           // TODO make reject scenario
           this.consoleLog('Uploading photo to server');
           this.logCurrentAction('✓');
           // eslint-disable-next-line no-return-await
-          return await this.upload_file(
-            result.response.upload_url,
-            fileLink
-          );
+          return await this.upload_file(result.response.upload_url, fileLink);
         })
         .then(
           (x) =>
-            new Promise((resolve) =>
-              setTimeout(() => {
-                // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
-                resolve(x);
-              }, this.sleeping_period)
-            )
+            new Promise(async (resolve) => {
+              await this.pause(this.sleeping_period);
+              resolve(x);
+            })
         )
         .then(async (uploadedFileInfo) => {
           let photo = uploadedFileInfo.photo;
@@ -830,8 +812,7 @@ export default {
           // TODO make reject scenario
           this.consoleLog('Saving uploaded photo');
           this.logCurrentAction('✓');
-          // eslint-disable-next-line no-return-await
-          return await this.photos_saveMarketPhoto(
+          return this.photos_saveMarketPhoto(
             photo,
             server,
             hash,
@@ -841,12 +822,10 @@ export default {
         })
         .then(
           (x) =>
-            new Promise((resolve) =>
-              setTimeout(() => {
-                // this.consoleLog(this.sleeping_period_text + this.sleeping_period)
-                resolve(x);
-              }, this.sleeping_period)
-            )
+            new Promise(async (resolve) => {
+              await this.pause(this.sleeping_period);
+              resolve(x);
+            })
         )
         .then((savedPhotoInfo) => {
           if (savedPhotoInfo.response) {
@@ -968,7 +947,7 @@ export default {
             'Ошибка API запроса. Пробуем ещё раз.' +
               this.action_string_separator
           );
-          await this.pause(1000);
+          await this.pause(500);
 
           let response = await this._onwApi_call(method, params);
           return response;
@@ -982,7 +961,7 @@ export default {
       }
     },
 
-    pause(pausePeriod) {
+    pauseOld(pausePeriod) {
       const startTime = performance.now();
       return new Promise(async (resolve) => {
         this.consoleLog('Pause ' + pausePeriod + ' ms began');
@@ -993,6 +972,37 @@ export default {
         return pauseEndMessage;
       });
     },
+
+    pause(pausePeriod) {
+      return new Promise(async (resolve) => {
+        this.consoleLog('Pause ' + pausePeriod + ' ms began');
+        this.$worker
+          .run(
+            (pausePeriod) => {
+              const workerStartTame = performance.now();
+              const fireTime = workerStartTame + pausePeriod;
+              while (true) {
+                if (performance.now() > fireTime) {
+                  break;
+                }
+              }
+              return 'worker pause resolved';
+            },
+            [pausePeriod]
+          )
+          .then((result) => {
+            resolve(result);
+          })
+          .catch((err) => {
+            console.error(err);
+            resolve(err);
+          });
+      }).then((pauseEndMessage) => {
+        console.log('pause ended here');
+        return pauseEndMessage;
+      });
+    },
+
     get_prog_bar_string(barString, perCent, bars, sep = ' ') {
       if (perCent > 100) {
         perCent = 100;
